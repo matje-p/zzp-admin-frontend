@@ -2,13 +2,30 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../lib/api';
 
 export interface Invoice {
-  id: string;
+  purchaseInvoiceUploadUuid: string;
   invoiceNumber: string;
-  clientName: string;
+  invoiceDate: string;
+  dueDate: string | null;
+  contactName: string | null;
+  recipient: string | null;
+  category: string | null;
   amount: number;
-  status: 'draft' | 'sent' | 'paid';
-  dueDate: string;
-  createdAt: string;
+  amountExclVat: number | null;
+  vatAmount: number | null;
+  vatPercentage: number | null;
+  currency: string;
+  status: string;
+  paidAt: string | null;
+  paymentMethod: string | null;
+  description: string | null;
+  notes: string | null;
+  documentUuid: string | null;
+}
+
+// Backend response type
+interface InvoicesResponse {
+  total: number;
+  invoices: Invoice[];
 }
 
 // Fetch all invoices
@@ -16,8 +33,8 @@ export const useInvoices = () => {
   return useQuery({
     queryKey: ['invoices'],
     queryFn: async () => {
-      const { data } = await apiClient.get<Invoice[]>('/invoices');
-      return data;
+      const { data } = await apiClient.get<InvoicesResponse>('/api/purchase-invoice');
+      return data.invoices;
     },
   });
 };
@@ -27,7 +44,7 @@ export const useInvoice = (id: string) => {
   return useQuery({
     queryKey: ['invoices', id],
     queryFn: async () => {
-      const { data } = await apiClient.get<Invoice>(`/invoices/${id}`);
+      const { data } = await apiClient.get<Invoice>(`/api/purchase-invoice/${id}`);
       return data;
     },
     enabled: !!id,
@@ -40,7 +57,7 @@ export const useCreateInvoice = () => {
 
   return useMutation({
     mutationFn: async (newInvoice: Omit<Invoice, 'id' | 'createdAt'>) => {
-      const { data } = await apiClient.post<Invoice>('/invoices', newInvoice);
+      const { data } = await apiClient.post<Invoice>('/api/purchase-invoice', newInvoice);
       return data;
     },
     onSuccess: () => {
@@ -55,7 +72,7 @@ export const useUpdateInvoice = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Invoice> & { id: string }) => {
-      const { data } = await apiClient.put<Invoice>(`/invoices/${id}`, updates);
+      const { data } = await apiClient.put<Invoice>(`/api/purchase-invoice/${id}`, updates);
       return data;
     },
     onSuccess: () => {
@@ -70,7 +87,7 @@ export const useDeleteInvoice = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await apiClient.delete(`/invoices/${id}`);
+      await apiClient.delete(`/api/purchase-invoice/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });

@@ -2,12 +2,23 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../lib/api';
 
 export interface Contact {
-  id: string;
+  uuid: string;
   name: string;
-  email: string;
-  phone?: string;
-  company?: string;
-  type: 'client' | 'supplier' | 'other';
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  vatNumber: string | null;
+  type: string;
+  isActive: boolean;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Backend response type
+interface ContactsResponse {
+  total: number;
+  contacts: Contact[];
 }
 
 // Fetch all contacts
@@ -15,8 +26,8 @@ export const useContacts = () => {
   return useQuery({
     queryKey: ['contacts'],
     queryFn: async () => {
-      const { data } = await apiClient.get<Contact[]>('/contacts');
-      return data;
+      const { data } = await apiClient.get<ContactsResponse>('/api/contact');
+      return data.contacts;
     },
   });
 };
@@ -26,7 +37,7 @@ export const useContact = (id: string) => {
   return useQuery({
     queryKey: ['contacts', id],
     queryFn: async () => {
-      const { data } = await apiClient.get<Contact>(`/contacts/${id}`);
+      const { data } = await apiClient.get<Contact>(`/api/contact/${id}`);
       return data;
     },
     enabled: !!id,
@@ -38,9 +49,9 @@ export const useCreateContact = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (newContact: Omit<Contact, 'id'>) => {
-      const { data } = await apiClient.post<Contact>('/contacts', newContact);
-      return data;
+    mutationFn: async (newContact: Omit<Contact, 'uuid' | 'createdAt' | 'updatedAt'>) => {
+      const { data } = await apiClient.post<{ message: string; contact: Contact }>('/api/contact', newContact);
+      return data.contact;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
@@ -53,8 +64,8 @@ export const useUpdateContact = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<Contact> & { id: string }) => {
-      const { data } = await apiClient.put<Contact>(`/contacts/${id}`, updates);
+    mutationFn: async ({ uuid, ...updates }: Partial<Contact> & { uuid: string }) => {
+      const { data } = await apiClient.patch<Contact>(`/api/contact/${uuid}`, updates);
       return data;
     },
     onSuccess: () => {
@@ -68,8 +79,22 @@ export const useDeleteContact = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: string) => {
-      await apiClient.delete(`/contacts/${id}`);
+    mutationFn: async (uuid: string) => {
+      await apiClient.delete(`/api/contact/${uuid}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+    },
+  });
+};
+
+// Deactivate contact
+export const useDeactivateContact = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (uuid: string) => {
+      await apiClient.delete(`/api/contact/${uuid}/deactivate`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
