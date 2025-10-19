@@ -154,15 +154,6 @@ const Invoices = () => {
     <div className="invoices-page">
       <div className="page-header">
         <h1>Purchase invoices</h1>
-        <div className="header-actions">
-          <button
-            className="btn-primary"
-            onClick={refetch}
-            disabled={isLoading}
-          >
-            {isLoading ? "Loading..." : "Refresh Invoices"}
-          </button>
-        </div>
       </div>
 
       <input
@@ -262,74 +253,82 @@ const Invoices = () => {
                       >
                         <td colSpan={6}>
                           <div className="invoice-details">
-                            <div className="details-grid">
-                              <div className="detail-item">
-                                <span className="detail-label">
-                                  Description:
-                                </span>
-                                <span className="detail-value">
-                                  {invoice.description || "-"}
-                                </span>
-                              </div>
-                              <div className="detail-item">
-                                <span className="detail-label">Category:</span>
-                                <span className="detail-value">
-                                  {invoice.category || "-"}
-                                </span>
-                              </div>
-                              <div className="detail-item">
-                                <span className="detail-label">
-                                  Amount (excl. VAT):
-                                </span>
-                                <span className="detail-value">
-                                  {invoice.amountExclVat
-                                    ? formatCurrency(invoice.amountExclVat)
-                                    : "-"}
-                                </span>
-                              </div>
-                              <div className="detail-item">
-                                <span className="detail-label">
-                                  VAT Amount:
-                                </span>
-                                <span className="detail-value">
-                                  {invoice.vatAmount
-                                    ? formatCurrency(invoice.vatAmount)
-                                    : "-"}
-                                </span>
-                              </div>
-                              <div className="detail-item">
-                                <span className="detail-label">
-                                  VAT Percentage:
-                                </span>
-                                <span className="detail-value">
-                                  {invoice.vatPercentage
-                                    ? `${invoice.vatPercentage}%`
-                                    : "-"}
-                                </span>
-                              </div>
-                              <div className="detail-item">
-                                <span className="detail-label">
-                                  Payment Method:
-                                </span>
-                                <span className="detail-value">
-                                  {invoice.paymentMethod || "-"}
-                                </span>
-                              </div>
-                              <div className="detail-item">
-                                <span className="detail-label">Paid At:</span>
-                                <span className="detail-value">
-                                  {invoice.paidAt
-                                    ? formatDate(invoice.paidAt)
-                                    : "-"}
-                                </span>
-                              </div>
-                              <div className="detail-item">
-                                <span className="detail-label">Notes:</span>
-                                <span className="detail-value">
-                                  {invoice.notes || "-"}
-                                </span>
-                              </div>
-                            </div>
+                            <table className="details-table">
+                              <tbody>
+                                <tr>
+                                  <td className="detail-label">UUID:</td>
+                                  <td className="detail-value">{invoice.purchaseInvoiceUploadUuid || "-"}</td>
+                                </tr>
+                                <tr>
+                                  <td className="detail-label">Invoice Number:</td>
+                                  <td className="detail-value">{invoice.invoiceNumber || "-"}</td>
+                                </tr>
+                                <tr>
+                                  <td className="detail-label">Invoice Date:</td>
+                                  <td className="detail-value">{formatDate(invoice.invoiceDate)}</td>
+                                </tr>
+                                <tr>
+                                  <td className="detail-label">Due Date:</td>
+                                  <td className="detail-value">{invoice.dueDate ? formatDate(invoice.dueDate) : "-"}</td>
+                                </tr>
+                                <tr>
+                                  <td className="detail-label">Contact Name:</td>
+                                  <td className="detail-value">{invoice.contactName || "-"}</td>
+                                </tr>
+                                <tr>
+                                  <td className="detail-label">Recipient:</td>
+                                  <td className="detail-value">{invoice.recipient || "-"}</td>
+                                </tr>
+                                <tr>
+                                  <td className="detail-label">Category:</td>
+                                  <td className="detail-value">{invoice.category || "-"}</td>
+                                </tr>
+                                <tr>
+                                  <td className="detail-label">Amount:</td>
+                                  <td className="detail-value">{formatCurrency(invoice.amount)}</td>
+                                </tr>
+                                <tr>
+                                  <td className="detail-label">Amount (excl. VAT):</td>
+                                  <td className="detail-value">{invoice.amountExclVat ? formatCurrency(invoice.amountExclVat) : "-"}</td>
+                                </tr>
+                                <tr>
+                                  <td className="detail-label">VAT Amount:</td>
+                                  <td className="detail-value">{invoice.vatAmount ? formatCurrency(invoice.vatAmount) : "-"}</td>
+                                </tr>
+                                <tr>
+                                  <td className="detail-label">VAT Percentage:</td>
+                                  <td className="detail-value">{invoice.vatPercentage ? `${invoice.vatPercentage}%` : "-"}</td>
+                                </tr>
+                                <tr>
+                                  <td className="detail-label">Currency:</td>
+                                  <td className="detail-value">{invoice.currency || "-"}</td>
+                                </tr>
+                                <tr>
+                                  <td className="detail-label">Status:</td>
+                                  <td className="detail-value">{invoice.status || "-"}</td>
+                                </tr>
+                                <tr>
+                                  <td className="detail-label">Paid At:</td>
+                                  <td className="detail-value">{invoice.paidAt ? formatDate(invoice.paidAt) : "-"}</td>
+                                </tr>
+                                <tr>
+                                  <td className="detail-label">Payment Method:</td>
+                                  <td className="detail-value">{invoice.paymentMethod || "-"}</td>
+                                </tr>
+                                <tr>
+                                  <td className="detail-label">Description:</td>
+                                  <td className="detail-value">{invoice.description || "-"}</td>
+                                </tr>
+                                <tr>
+                                  <td className="detail-label">Notes:</td>
+                                  <td className="detail-value">{invoice.notes || "-"}</td>
+                                </tr>
+                                <tr>
+                                  <td className="detail-label">Document UUID:</td>
+                                  <td className="detail-value">{invoice.documentUuid || "-"}</td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </div>
                         </td>
                       </tr>

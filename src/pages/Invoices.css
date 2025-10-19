@@ -193,29 +193,36 @@
   border-top: 1px solid #e5e7eb;
 }
 
-.details-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+.details-table {
+  width: auto;
+  max-width: 800px;
+  border-collapse: collapse;
 }
 
-.detail-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.details-table tbody tr {
+  border: none;
 }
 
-.detail-label {
+.details-table tbody tr:hover {
+  background-color: transparent;
+}
+
+.details-table td.detail-label {
   font-size: 12px;
   font-weight: 600;
   color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  padding: 6px 24px 6px 0;
+  vertical-align: top;
+  white-space: nowrap;
 }
 
-.detail-value {
+.details-table td.detail-value {
   font-size: 14px;
   color: #1f2937;
+  padding: 6px 0;
+  vertical-align: top;
 }
 
 .invoices-table td {
