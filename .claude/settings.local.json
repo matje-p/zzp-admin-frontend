@@ -26,7 +26,14 @@
       "Bash(findstr :5173)",
       "Bash(taskkill /PID 21340 /F)",
       "Bash(cmd //c taskkill //PID 21340 //F)",
-      "Bash(npm install lucide-react)"
+      "Bash(npm install lucide-react)",
+      "Bash(git rm -f src/pages/Invoices.tsx src/pages/Invoices.css src/hooks/useInvoices.ts)",
+      "Bash(git add src/pages/PurchaseInvoices.tsx src/pages/PurchaseInvoices.css src/hooks/usePurchaseInvoices.ts src/App.tsx src/components/Layout.tsx)",
+      "Bash(git add src/hooks/usePurchaseInvoices.ts src/pages/PurchaseInvoices.tsx)",
+      "Bash(git add src/hooks/useContacts.ts src/pages/Contacts.tsx)",
+      "Bash(git add ../backend/src/services/subscription.service.ts ../backend/src/controllers/subscription.controller.ts ../backend/src/routes/subscription.routes.ts ../backend/src/index.ts)",
+      "Bash(git add src/hooks/useSubscriptions.ts src/pages/Subscriptions.tsx)",
+      "Bash(git add src/hooks/usePurchaseInvoices.ts)"
     ],
     "deny": [],
     "ask": []
