@@ -1,10 +1,12 @@
 import React, { useState, useRef } from "react";
-import { useInvoices } from "../hooks/useInvoices";
-import type { Invoice } from "../hooks/useInvoices";
-import "./Invoices.css";
+import { Trash2 } from "lucide-react";
+import { usePurchaseInvoices, useDeletePurchaseInvoice } from "../hooks/usePurchaseInvoices";
+import type { PurchaseInvoice } from "../hooks/usePurchaseInvoices";
+import "./PurchaseInvoices.css";
 
-const Invoices = () => {
-  const { data: invoices, isLoading, error, refetch } = useInvoices();
+const PurchaseInvoices = () => {
+  const { data: invoices, isLoading, error, refetch } = usePurchaseInvoices();
+  const deleteInvoiceMutation = useDeletePurchaseInvoice();
   const [isDragging, setIsDragging] = useState(false);
   const [expandedInvoiceId, setExpandedInvoiceId] = useState<string | null>(
     null
@@ -13,6 +15,8 @@ const Invoices = () => {
     "idle" | "uploading" | "success" | "error"
   >("idle");
   const [uploadMessage, setUploadMessage] = useState<string>("");
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const toggleExpand = (invoiceId: string) => {
@@ -111,6 +115,29 @@ const Invoices = () => {
     e.target.value = "";
   };
 
+  const handleDeleteClick = (e: React.MouseEvent, invoiceId: string) => {
+    e.stopPropagation(); // Prevent row expansion
+    setInvoiceToDelete(invoiceId);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (invoiceToDelete) {
+      try {
+        await deleteInvoiceMutation.mutateAsync(invoiceToDelete);
+        setDeleteModalOpen(false);
+        setInvoiceToDelete(null);
+      } catch (error) {
+        console.error("Failed to delete invoice:", error);
+      }
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModalOpen(false);
+    setInvoiceToDelete(null);
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("nl-NL", {
       style: "currency",
@@ -128,7 +155,7 @@ const Invoices = () => {
 
   if (isLoading) {
     return (
-      <div className="invoices-page">
+      <div className="purchase-invoices-page">
         <div className="page-header">
           <h1>Purchase invoices</h1>
         </div>
@@ -139,7 +166,7 @@ const Invoices = () => {
 
   if (error) {
     return (
-      <div className="invoices-page">
+      <div className="purchase-invoices-page">
         <div className="page-header">
           <h1>Purchase invoices</h1>
         </div>
@@ -151,7 +178,7 @@ const Invoices = () => {
   }
 
   return (
-    <div className="invoices-page">
+    <div className="purchase-invoices-page">
       <div className="page-header">
         <h1>Purchase invoices</h1>
       </div>
@@ -204,8 +231,8 @@ const Invoices = () => {
         </div>
       )}
 
-      <div className="invoices-table-container">
-        <table className="invoices-table">
+      <div className="purchase-invoices-table-container">
+        <table className="purchase-invoices-table">
           <thead>
             <tr>
               <th>Date</th>
@@ -214,11 +241,12 @@ const Invoices = () => {
               <th>Amount</th>
               <th>Type</th>
               <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {invoices && invoices.length > 0 ? (
-              invoices.map((invoice: Invoice) => {
+              invoices.map((invoice: PurchaseInvoice) => {
                 const isExpanded = expandedInvoiceId === invoice.purchaseInvoiceUploadUuid;
                 return (
                   <React.Fragment key={invoice.purchaseInvoiceUploadUuid}>
@@ -234,7 +262,7 @@ const Invoices = () => {
                       </td>
                       <td className="type-cell">
                         <span className="subscription-badge">
-                          {invoice.notes && invoice.notes.toLowerCase().includes('recurring') ? 'Recurring' : 'One-off'}
+                          {invoice.subscriptionUuid ? 'Subscription' : 'One-off'}
                         </span>
                       </td>
                       <td>
@@ -245,13 +273,22 @@ const Invoices = () => {
                             invoice.status.slice(1)}
                         </span>
                       </td>
+                      <td>
+                        <button
+                          className="delete-button"
+                          onClick={(e) => handleDeleteClick(e, invoice.purchaseInvoiceUploadUuid)}
+                          title="Delete invoice"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
                     </tr>
                     {isExpanded && (
                       <tr
                         className="expanded-row"
                         onClick={() => toggleExpand(invoice.purchaseInvoiceUploadUuid)}
                       >
-                        <td colSpan={6}>
+                        <td colSpan={7}>
                           <div className="invoice-details">
                             <table className="details-table">
                               <tbody>
@@ -274,10 +311,6 @@ const Invoices = () => {
                                 <tr>
                                   <td className="detail-label">Contact Name:</td>
                                   <td className="detail-value">{invoice.contactName || "-"}</td>
-                                </tr>
-                                <tr>
-                                  <td className="detail-label">Recipient:</td>
-                                  <td className="detail-value">{invoice.recipient || "-"}</td>
                                 </tr>
                                 <tr>
                                   <td className="detail-label">Category:</td>
@@ -339,7 +372,7 @@ const Invoices = () => {
             ) : (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   style={{ textAlign: "center", padding: "20px" }}
                 >
                   No invoices found. Click "Refresh Invoices" to reload.
@@ -349,8 +382,29 @@ const Invoices = () => {
           </tbody>
         </table>
       </div>
+
+      {deleteModalOpen && (
+        <div className="modal-overlay" onClick={handleDeleteCancel}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Delete Invoice</h2>
+            <p>Are you sure you want to delete this invoice?</p>
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={handleDeleteCancel}>
+                Cancel
+              </button>
+              <button
+                className="btn-delete"
+                onClick={handleDeleteConfirm}
+                disabled={deleteInvoiceMutation.isPending}
+              >
+                {deleteInvoiceMutation.isPending ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default Invoices;
+export default PurchaseInvoices;

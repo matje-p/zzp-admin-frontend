@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Transactions from './pages/Transactions';
-import Invoices from './pages/Invoices';
+import PurchaseInvoices from './pages/PurchaseInvoices';
 import OutboundInvoices from './pages/OutboundInvoices';
 import Contacts from './pages/Contacts';
 import Subscriptions from './pages/Subscriptions';
@@ -16,7 +16,7 @@ function App() {
           <Route index element={<Navigate to="/todos" replace />} />
           <Route path="todos" element={<Todos />} />
           <Route path="transactions" element={<Transactions />} />
-          <Route path="invoices" element={<Invoices />} />
+          <Route path="purchase-invoices" element={<PurchaseInvoices />} />
           <Route path="outbound-invoices" element={<OutboundInvoices />} />
           <Route path="contacts" element={<Contacts />} />
           <Route path="subscriptions" element={<Subscriptions />} />

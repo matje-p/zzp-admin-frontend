@@ -21,7 +21,7 @@ const Layout = () => {
       icon: <Landmark size={20} />
     },
     {
-      path: '/invoices',
+      path: '/purchase-invoices',
       label: 'Purchase invoices',
       icon: <FileText size={20} />
     },

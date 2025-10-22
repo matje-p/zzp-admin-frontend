@@ -65,6 +65,7 @@ const Contacts = () => {
               <th>Phone</th>
               <th>Type</th>
               <th>VAT Number</th>
+              <th>Invoices</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -87,6 +88,7 @@ const Contacts = () => {
                         </span>
                       </td>
                       <td className="vat-number">{contact.vatNumber || '-'}</td>
+                      <td className="invoice-count">{contact.purchaseInvoiceCount}</td>
                       <td>
                         <span className={`status-badge ${contact.isActive ? 'status-active' : 'status-inactive'}`}>
                           {contact.isActive ? 'Active' : 'Inactive'}
@@ -95,7 +97,7 @@ const Contacts = () => {
                     </tr>
                     {isExpanded && (
                       <tr key={`${contact.uuid}-details`} className="expanded-row">
-                        <td colSpan={6}>
+                        <td colSpan={7}>
                           <div className="contact-details">
                             <div className="details-grid">
                               <div className="detail-item">
@@ -124,7 +126,7 @@ const Contacts = () => {
               })
             ) : (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '20px' }}>
                   No contacts found. Click "Refresh Contacts" to reload.
                 </td>
               </tr>

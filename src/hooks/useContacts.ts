@@ -11,6 +11,7 @@ export interface Contact {
   type: string;
   isActive: boolean;
   notes: string | null;
+  purchaseInvoiceCount: number;
   createdAt: string;
   updatedAt: string;
 }
