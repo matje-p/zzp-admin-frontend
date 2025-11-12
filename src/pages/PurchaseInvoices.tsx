@@ -1,26 +1,97 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Trash2 } from "lucide-react";
 import { usePurchaseInvoices, useDeletePurchaseInvoice } from "../hooks/usePurchaseInvoices";
 import type { PurchaseInvoice } from "../hooks/usePurchaseInvoices";
 import "./PurchaseInvoices.css";
 
+interface ProcessingStatus {
+  processingId: string;
+  step: number;
+  totalSteps: number;
+  stepName: string;
+  message: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'error';
+  data?: any;
+  error?: string;
+}
+
+
 const PurchaseInvoices = () => {
   const { data: invoices, isLoading, error, refetch } = usePurchaseInvoices();
   const deleteInvoiceMutation = useDeletePurchaseInvoice();
   const [isDragging, setIsDragging] = useState(false);
-  const [expandedInvoiceId, setExpandedInvoiceId] = useState<string | null>(
-    null
-  );
+  const [selectedInvoice, setSelectedInvoice] = useState<PurchaseInvoice | null>(null);
   const [uploadStatus, setUploadStatus] = useState<
     "idle" | "uploading" | "success" | "error"
   >("idle");
   const [uploadMessage, setUploadMessage] = useState<string>("");
+  const [processingStatus, setProcessingStatus] = useState<ProcessingStatus | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
-  const toggleExpand = (invoiceId: string) => {
-    setExpandedInvoiceId(expandedInvoiceId === invoiceId ? null : invoiceId);
+  const handleDeleteConfirm = useCallback(async () => {
+    if (invoiceToDelete) {
+      try {
+        await deleteInvoiceMutation.mutateAsync(invoiceToDelete);
+        setDeleteModalOpen(false);
+        setInvoiceToDelete(null);
+      } catch (error) {
+        console.error("Failed to delete invoice:", error);
+      }
+    }
+  }, [invoiceToDelete, deleteInvoiceMutation]);
+
+  const handleDeleteCancel = useCallback(() => {
+    setDeleteModalOpen(false);
+    setInvoiceToDelete(null);
+  }, []);
+
+  // Cleanup SSE connection on unmount
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
+  }, []);
+
+  // Handle keyboard events for all modals
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        // Close detail modal if open
+        if (selectedInvoice) {
+          handleCloseDetailModal();
+        }
+        // Close delete modal if open
+        if (deleteModalOpen) {
+          handleDeleteCancel();
+        }
+      } else if (e.key === "Enter" && deleteModalOpen) {
+        e.preventDefault();
+        handleDeleteConfirm();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [deleteModalOpen, selectedInvoice, handleDeleteConfirm, handleDeleteCancel]);
+
+  const handleRowClick = (invoice: PurchaseInvoice) => {
+    setSelectedInvoice(invoice);
+
+    // Log when PDF endpoint will be called
+    if (invoice.documentUuid) {
+      const pdfUrl = `${import.meta.env.VITE_API_URL}/api/purchase-invoice/${invoice.purchaseInvoiceUploadUuid}/document`;
+      console.log('📄 Loading PDF from endpoint:', pdfUrl);
+    }
+  };
+
+  const handleCloseDetailModal = () => {
+    setSelectedInvoice(null);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -39,11 +110,12 @@ const PurchaseInvoices = () => {
     const files = Array.from(e.dataTransfer.files);
 
     if (files.length > 0) {
-      // Check if all files are PDFs
-      const nonPdfFiles = files.filter(file => file.type !== "application/pdf");
-      if (nonPdfFiles.length > 0) {
+      // Check if all files are PDFs, PNGs, or JPGs
+      const allowedTypes = ["application/pdf", "image/png", "image/jpeg", "image/jpg"];
+      const invalidFiles = files.filter(file => !allowedTypes.includes(file.type));
+      if (invalidFiles.length > 0) {
         setUploadStatus("error");
-        setUploadMessage("Please upload only PDF files");
+        setUploadMessage("Please upload only PDF, PNG, or JPG files");
         setTimeout(() => setUploadStatus("idle"), 3000);
         return;
       }
@@ -52,8 +124,70 @@ const PurchaseInvoices = () => {
     }
   };
 
+  const connectToSSE = (processingId: string) => {
+    const eventSource = new EventSource(
+      `${import.meta.env.VITE_API_URL}/api/upload/stream/${processingId}`
+    );
+
+    eventSourceRef.current = eventSource;
+
+    eventSource.onmessage = (event) => {
+      const status: ProcessingStatus = JSON.parse(event.data);
+      console.log('Processing status:', status);
+
+      setProcessingStatus(status);
+      setUploadMessage(status.message);
+
+      // Handle completion
+      if (status.status === 'completed') {
+        setUploadStatus("success");
+        setUploadMessage("Invoice processed successfully!");
+        eventSource.close();
+        eventSourceRef.current = null;
+        setTimeout(() => {
+          setProcessingStatus(null);
+          refetch();
+          setUploadStatus("idle");
+        }, 2000);
+      }
+
+      // Handle error
+      if (status.status === 'error') {
+        setUploadStatus("error");
+        setUploadMessage(status.error || "Processing failed");
+        setTimeout(() => {
+          eventSource.close();
+          eventSourceRef.current = null;
+          setProcessingStatus(null);
+          setUploadStatus("idle");
+        }, 3000);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error('SSE error:', error);
+
+      // If already closed or completed, ignore the error (normal closure)
+      if (eventSource.readyState === EventSource.CLOSED) {
+        console.log('SSE connection closed normally');
+        return;
+      }
+
+      // Only handle actual errors
+      eventSource.close();
+      eventSourceRef.current = null;
+      setUploadStatus("error");
+      setUploadMessage("Connection error during processing");
+      setTimeout(() => {
+        setProcessingStatus(null);
+        setUploadStatus("idle");
+      }, 3000);
+    };
+  };
+
   const uploadFiles = async (files: File[]) => {
     setUploadStatus("uploading");
+    setProcessingStatus(null);
     const fileCount = files.length;
     setUploadMessage(`Uploading ${fileCount} invoice${fileCount > 1 ? 's' : ''}...`);
 
@@ -76,17 +210,25 @@ const PurchaseInvoices = () => {
       }
 
       const data = await response.json();
-      setUploadStatus("success");
-      setUploadMessage(`${fileCount} invoice${fileCount > 1 ? 's' : ''} uploaded successfully!`);
 
-      // Refresh invoices list after successful upload
-      setTimeout(() => {
-        refetch();
-        setUploadStatus("idle");
-      }, 2000);
+      if (!data.success) {
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      const processingId = data.data.processingId;
+
+      if (!processingId) {
+        throw new Error('No processing ID returned');
+      }
+
+      console.log('Upload successful, connecting to SSE...');
+
+      // Connect to SSE for real-time updates
+      connectToSSE(processingId);
+
     } catch (err) {
       setUploadStatus("error");
-      setUploadMessage("Failed to upload invoices");
+      setUploadMessage(err instanceof Error ? err.message : "Failed to upload invoices");
       setTimeout(() => setUploadStatus("idle"), 3000);
     }
   };
@@ -100,11 +242,12 @@ const PurchaseInvoices = () => {
     if (fileList && fileList.length > 0) {
       const files = Array.from(fileList);
 
-      // Check if all files are PDFs
-      const nonPdfFiles = files.filter(file => file.type !== "application/pdf");
-      if (nonPdfFiles.length > 0) {
+      // Check if all files are PDFs, PNGs, or JPGs
+      const allowedTypes = ["application/pdf", "image/png", "image/jpeg", "image/jpg"];
+      const invalidFiles = files.filter(file => !allowedTypes.includes(file.type));
+      if (invalidFiles.length > 0) {
         setUploadStatus("error");
-        setUploadMessage("Please upload only PDF files");
+        setUploadMessage("Please upload only PDF, PNG, or JPG files");
         setTimeout(() => setUploadStatus("idle"), 3000);
         return;
       }
@@ -119,23 +262,6 @@ const PurchaseInvoices = () => {
     e.stopPropagation(); // Prevent row expansion
     setInvoiceToDelete(invoiceId);
     setDeleteModalOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (invoiceToDelete) {
-      try {
-        await deleteInvoiceMutation.mutateAsync(invoiceToDelete);
-        setDeleteModalOpen(false);
-        setInvoiceToDelete(null);
-      } catch (error) {
-        console.error("Failed to delete invoice:", error);
-      }
-    }
-  };
-
-  const handleDeleteCancel = () => {
-    setDeleteModalOpen(false);
-    setInvoiceToDelete(null);
   };
 
   const formatCurrency = (amount: number) => {
@@ -187,7 +313,7 @@ const PurchaseInvoices = () => {
         type="file"
         ref={fileInputRef}
         onChange={handleFileInputChange}
-        accept="application/pdf"
+        accept="application/pdf,image/png,image/jpeg,image/jpg"
         multiple
         style={{ display: "none" }}
       />
@@ -219,15 +345,18 @@ const PurchaseInvoices = () => {
         </span>
       </div>
 
-      {uploadStatus === "uploading" && (
-        <div className="progress-bar-container">
-          <div className="progress-bar"></div>
+      {uploadStatus !== "idle" && uploadStatus !== "uploading" && (
+        <div className={`upload-message upload-${uploadStatus}`}>
+          {uploadMessage}
         </div>
       )}
 
-      {uploadStatus !== "idle" && (
-        <div className={`upload-message upload-${uploadStatus}`}>
-          {uploadMessage}
+      {processingStatus && uploadStatus === "uploading" && (
+        <div className="processing-status-container">
+          <div className="processing-spinner"></div>
+          <div className="processing-step-message-current">
+            {processingStatus.message}
+          </div>
         </div>
       )}
 
@@ -235,144 +364,66 @@ const PurchaseInvoices = () => {
         <table className="purchase-invoices-table">
           <thead>
             <tr>
+              <th>Status</th>
               <th>Date</th>
               <th>Contact Name</th>
               <th>Description</th>
+              <th>Category</th>
               <th>Amount</th>
               <th>Type</th>
-              <th>Status</th>
+              <th>Payment</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {invoices && invoices.length > 0 ? (
-              invoices.map((invoice: PurchaseInvoice) => {
-                const isExpanded = expandedInvoiceId === invoice.purchaseInvoiceUploadUuid;
-                return (
-                  <React.Fragment key={invoice.purchaseInvoiceUploadUuid}>
-                    <tr
-                      onClick={() => toggleExpand(invoice.purchaseInvoiceUploadUuid)}
-                      className="clickable-row"
+              invoices.map((invoice: PurchaseInvoice) => (
+                <tr
+                  key={invoice.purchaseInvoiceUploadUuid}
+                  onClick={() => handleRowClick(invoice)}
+                  className="clickable-row"
+                >
+                  <td>
+                    <span
+                      className={`status-badge ${invoice.documentUuid ? 'status-uploaded' : 'status-expected'}`}
                     >
-                      <td>{formatDate(invoice.invoiceDate)}</td>
-                      <td>{invoice.contactName || "-"}</td>
-                      <td>{invoice.description || "-"}</td>
-                      <td className="amount-positive">
-                        {formatCurrency(invoice.amount)}
-                      </td>
-                      <td className="type-cell">
-                        <span className="subscription-badge">
-                          {invoice.subscriptionUuid ? 'Subscription' : 'One-off'}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className={`status-badge status-${invoice.status}`}
-                        >
-                          {invoice.status.charAt(0).toUpperCase() +
-                            invoice.status.slice(1)}
-                        </span>
-                      </td>
-                      <td>
-                        <button
-                          className="delete-button"
-                          onClick={(e) => handleDeleteClick(e, invoice.purchaseInvoiceUploadUuid)}
-                          title="Delete invoice"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                    {isExpanded && (
-                      <tr
-                        className="expanded-row"
-                        onClick={() => toggleExpand(invoice.purchaseInvoiceUploadUuid)}
-                      >
-                        <td colSpan={7}>
-                          <div className="invoice-details">
-                            <table className="details-table">
-                              <tbody>
-                                <tr>
-                                  <td className="detail-label">UUID:</td>
-                                  <td className="detail-value">{invoice.purchaseInvoiceUploadUuid || "-"}</td>
-                                </tr>
-                                <tr>
-                                  <td className="detail-label">Invoice Number:</td>
-                                  <td className="detail-value">{invoice.invoiceNumber || "-"}</td>
-                                </tr>
-                                <tr>
-                                  <td className="detail-label">Invoice Date:</td>
-                                  <td className="detail-value">{formatDate(invoice.invoiceDate)}</td>
-                                </tr>
-                                <tr>
-                                  <td className="detail-label">Due Date:</td>
-                                  <td className="detail-value">{invoice.dueDate ? formatDate(invoice.dueDate) : "-"}</td>
-                                </tr>
-                                <tr>
-                                  <td className="detail-label">Contact Name:</td>
-                                  <td className="detail-value">{invoice.contactName || "-"}</td>
-                                </tr>
-                                <tr>
-                                  <td className="detail-label">Category:</td>
-                                  <td className="detail-value">{invoice.category || "-"}</td>
-                                </tr>
-                                <tr>
-                                  <td className="detail-label">Amount:</td>
-                                  <td className="detail-value">{formatCurrency(invoice.amount)}</td>
-                                </tr>
-                                <tr>
-                                  <td className="detail-label">Amount (excl. VAT):</td>
-                                  <td className="detail-value">{invoice.amountExclVat ? formatCurrency(invoice.amountExclVat) : "-"}</td>
-                                </tr>
-                                <tr>
-                                  <td className="detail-label">VAT Amount:</td>
-                                  <td className="detail-value">{invoice.vatAmount ? formatCurrency(invoice.vatAmount) : "-"}</td>
-                                </tr>
-                                <tr>
-                                  <td className="detail-label">VAT Percentage:</td>
-                                  <td className="detail-value">{invoice.vatPercentage ? `${invoice.vatPercentage}%` : "-"}</td>
-                                </tr>
-                                <tr>
-                                  <td className="detail-label">Currency:</td>
-                                  <td className="detail-value">{invoice.currency || "-"}</td>
-                                </tr>
-                                <tr>
-                                  <td className="detail-label">Status:</td>
-                                  <td className="detail-value">{invoice.status || "-"}</td>
-                                </tr>
-                                <tr>
-                                  <td className="detail-label">Paid At:</td>
-                                  <td className="detail-value">{invoice.paidAt ? formatDate(invoice.paidAt) : "-"}</td>
-                                </tr>
-                                <tr>
-                                  <td className="detail-label">Payment Method:</td>
-                                  <td className="detail-value">{invoice.paymentMethod || "-"}</td>
-                                </tr>
-                                <tr>
-                                  <td className="detail-label">Description:</td>
-                                  <td className="detail-value">{invoice.description || "-"}</td>
-                                </tr>
-                                <tr>
-                                  <td className="detail-label">Notes:</td>
-                                  <td className="detail-value">{invoice.notes || "-"}</td>
-                                </tr>
-                                <tr>
-                                  <td className="detail-label">Document UUID:</td>
-                                  <td className="detail-value">{invoice.documentUuid || "-"}</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                );
-              })
+                      {invoice.documentUuid ? 'Uploaded' : 'Expected'}
+                    </span>
+                  </td>
+                  <td>{formatDate(invoice.invoiceSentDate)}</td>
+                  <td>{invoice.contactName || "-"}</td>
+                  <td>{invoice.description || "-"}</td>
+                  <td>{invoice.category || "-"}</td>
+                  <td className="amount-positive">
+                    {formatCurrency(invoice.amount)}
+                  </td>
+                  <td className="type-cell">
+                    <span className="subscription-badge">
+                      {invoice.subscriptionUuid ? 'Subscription' : 'One-off'}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      className={`status-badge ${invoice.transactionUuid ? 'status-linked' : 'status-unlinked'}`}
+                    >
+                      {invoice.transactionUuid ? 'Linked' : 'Not linked'}
+                    </span>
+                  </td>
+                  <td>
+                    <button
+                      className="delete-button"
+                      onClick={(e) => handleDeleteClick(e, invoice.purchaseInvoiceUploadUuid)}
+                      title="Delete invoice"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))
             ) : (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={9}
                   style={{ textAlign: "center", padding: "20px" }}
                 >
                   No invoices found. Click "Refresh Invoices" to reload.
@@ -399,6 +450,177 @@ const PurchaseInvoices = () => {
               >
                 {deleteInvoiceMutation.isPending ? "Deleting..." : "Delete"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedInvoice && (
+        <div className="modal-overlay" onClick={handleCloseDetailModal}>
+          <div className="modal-content invoice-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Invoice Details</h2>
+              <button className="modal-close" onClick={handleCloseDetailModal}>&times;</button>
+            </div>
+            <div className="invoice-detail-content">
+              <div className="invoice-detail-left">
+                <div className="invoice-details">
+                  <table className="details-table">
+                    <tbody>
+                      <tr>
+                        <td className="detail-label">UUID:</td>
+                        <td className="detail-value">{selectedInvoice.purchaseInvoiceUploadUuid || "-"}</td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">Invoice Number:</td>
+                        <td className="detail-value">{selectedInvoice.invoiceNumber || "-"}</td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">Invoice Sent Date:</td>
+                        <td className="detail-value">{formatDate(selectedInvoice.invoiceSentDate)}</td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">Due Date:</td>
+                        <td className="detail-value">{selectedInvoice.dueDate ? formatDate(selectedInvoice.dueDate) : "-"}</td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">Contact Name:</td>
+                        <td className="detail-value">{selectedInvoice.contactName || "-"}</td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">Category:</td>
+                        <td className="detail-value">{selectedInvoice.category || "-"}</td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">Amount:</td>
+                        <td className="detail-value">{formatCurrency(selectedInvoice.amount)}</td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">Amount (excl. VAT):</td>
+                        <td className="detail-value">{selectedInvoice.amountExclVat ? formatCurrency(selectedInvoice.amountExclVat) : "-"}</td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">VAT Amount:</td>
+                        <td className="detail-value">{selectedInvoice.vatAmount ? formatCurrency(selectedInvoice.vatAmount) : "-"}</td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">VAT Percentage:</td>
+                        <td className="detail-value">{selectedInvoice.vatPercentage ? `${selectedInvoice.vatPercentage}%` : "-"}</td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">Currency:</td>
+                        <td className="detail-value">{selectedInvoice.currency || "-"}</td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">Status:</td>
+                        <td className="detail-value">{selectedInvoice.status || "-"}</td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">Document Status:</td>
+                        <td className="detail-value">
+                          <span className={`status-badge ${selectedInvoice.documentUuid ? 'status-uploaded' : 'status-expected'}`}>
+                            {selectedInvoice.documentUuid ? 'Uploaded' : 'Expected'}
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">Type:</td>
+                        <td className="detail-value">
+                          <span className="subscription-badge">
+                            {selectedInvoice.subscriptionUuid ? 'Subscription' : 'One-off'}
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">Payment:</td>
+                        <td className="detail-value">
+                          <span className={`status-badge ${selectedInvoice.transactionUuid ? 'status-linked' : 'status-unlinked'}`}>
+                            {selectedInvoice.transactionUuid ? 'Linked' : 'Not linked'}
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">Paid At:</td>
+                        <td className="detail-value">{selectedInvoice.paidAt ? formatDate(selectedInvoice.paidAt) : "-"}</td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">Payment Method:</td>
+                        <td className="detail-value">{selectedInvoice.paymentMethod || "-"}</td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">Description:</td>
+                        <td className="detail-value">{selectedInvoice.description || "-"}</td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">Notes:</td>
+                        <td className="detail-value">{selectedInvoice.notes || "-"}</td>
+                      </tr>
+                      <tr>
+                        <td className="detail-label">Document UUID:</td>
+                        <td className="detail-value">{selectedInvoice.documentUuid || "-"}</td>
+                      </tr>
+                      {selectedInvoice.subscriptionUuid && (
+                        <tr>
+                          <td className="detail-label">Subscription UUID:</td>
+                          <td className="detail-value">{selectedInvoice.subscriptionUuid}</td>
+                        </tr>
+                      )}
+                      {selectedInvoice.transactionUuid && (
+                        <tr>
+                          <td className="detail-label">Transaction UUID:</td>
+                          <td className="detail-value">{selectedInvoice.transactionUuid}</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="invoice-detail-right">
+              {(() => {
+                  console.log('🔍 Checking filePath:', selectedInvoice.filePath);
+                  console.log('🔍 Checking filename:', selectedInvoice.filename);
+                  console.log('🔍 Invoice UUID:', selectedInvoice.purchaseInvoiceUploadUuid);
+                  console.log('🔍 VITE_API_URL:', import.meta.env.VITE_API_URL);
+
+                  const hasDocument = selectedInvoice.filePath || selectedInvoice.filename;
+
+                  if (hasDocument) {
+                    const pdfUrl = `${import.meta.env.VITE_API_URL}/api/purchase-invoice/${selectedInvoice.purchaseInvoiceUploadUuid}/document`;
+                    console.log('📄 RENDERING IFRAME with URL:', pdfUrl);
+                    return (
+                      <div className="pdf-viewer-container">
+                        <iframe
+                          src={pdfUrl}
+                          className="pdf-viewer"
+                          title="Invoice PDF"
+                          onLoad={() => {
+                            console.log('✅ PDF iframe onLoad fired');
+                          }}
+                          onError={() => {
+                            console.error('❌ PDF iframe onError fired');
+                          }}
+                        />
+                      </div>
+                    );
+                  } else {
+                    console.log('⚠️ No document file - showing placeholder');
+                    return (
+                      <div className="pdf-preview-container">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                          <polyline points="14 2 14 8 20 8"></polyline>
+                          <line x1="16" y1="13" x2="8" y2="13"></line>
+                          <line x1="16" y1="17" x2="8" y2="17"></line>
+                          <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        <div className="pdf-preview-text">
+                          No document uploaded
+                        </div>
+                      </div>
+                    );
+                  }
+                })()}
+              </div>
             </div>
           </div>
         </div>

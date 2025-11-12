@@ -178,3 +178,19 @@
   background-color: #f3f4f6;
   color: #4b5563;
 }
+
+.status-badge.status-sent {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge.status-cancelled {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  text-decoration: line-through;
+}
+
+.amount {
+  font-weight: 600;
+  color: #059669;
+}

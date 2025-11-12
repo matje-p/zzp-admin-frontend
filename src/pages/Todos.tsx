@@ -79,9 +79,9 @@ export const dummyTodos: Todo[] = [
   },
 ];
 
-// Get count of "For me" todos (non-completed items)
+// Get count of "Expected invoices" todos (non-completed items)
 export const getForMeTodosCount = () => {
-  return dummyTodos.filter(todo => todo.status !== 'completed').length;
+  return dummyTodos.filter((todo) => todo.status !== "completed").length;
 };
 
 const historyTodos: Todo[] = [
@@ -143,8 +143,8 @@ const Todos = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
   };
@@ -163,7 +163,7 @@ const Todos = () => {
           className="section-header"
           onClick={() => setIsForMeExpanded(!isForMeExpanded)}
         >
-          <h2>For me</h2>
+          <h2>Expected invoices</h2>
           <span
             className={`collapse-icon ${isForMeExpanded ? "expanded" : ""}`}
           >
@@ -268,7 +268,9 @@ const Todos = () => {
                       </span>
                     </td>
                     <td>
-                      <span className={`done-by-badge done-by-${todo.doneBy?.toLowerCase()}`}>
+                      <span
+                        className={`done-by-badge done-by-${todo.doneBy?.toLowerCase()}`}
+                      >
                         {todo.doneBy || "-"}
                       </span>
                     </td>

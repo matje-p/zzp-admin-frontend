@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { CheckSquare, Landmark, FileText, Send, BookUser, CalendarClock } from 'lucide-react';
+import { CheckSquare, Landmark, FileText, Send, BookUser, CalendarClock, TrendingUp, Scale } from 'lucide-react';
 import TopNav from './TopNav';
 import { getForMeTodosCount } from '../pages/Todos';
 import './Layout.css';
@@ -40,6 +40,16 @@ const Layout = () => {
       label: 'Contacts',
       icon: <BookUser size={20} />
     },
+    {
+      path: '/pl',
+      label: 'P&L',
+      icon: <TrendingUp size={20} />
+    },
+    {
+      path: '/balance-sheet',
+      label: 'Balance Sheet',
+      icon: <Scale size={20} />
+    },
   ];
 
   return (
@@ -57,10 +67,10 @@ const Layout = () => {
                   <span className="nav-item-content">
                     {item.icon && <span className="nav-icon">{item.icon}</span>}
                     <span className="nav-label">{item.label}</span>
+                    {item.badge !== undefined && item.badge > 0 && (
+                      <span className="nav-badge">{item.badge}</span>
+                    )}
                   </span>
-                  {item.badge !== undefined && item.badge > 0 && (
-                    <span className="nav-badge">{item.badge}</span>
-                  )}
                 </Link>
               </li>
             ))}

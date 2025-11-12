@@ -1,13 +1,67 @@
 import React, { useState } from 'react';
+import { useSalesInvoices } from '../hooks/useSalesInvoices';
+import SalesInvoiceForm from '../components/SalesInvoiceForm';
+import type { SalesInvoice } from '../hooks/useSalesInvoices';
 import './OutboundInvoices.css';
 
 const OutboundInvoices = () => {
+  const { data: invoices, isLoading, error } = useSalesInvoices();
+  const [isFormOpen, setIsFormOpen] = useState(false);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('nl-NL', {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  const getStatusClass = (status: string) => {
+    switch (status) {
+      case 'draft': return 'status-draft';
+      case 'sent': return 'status-sent';
+      case 'paid': return 'status-paid';
+      case 'overdue': return 'status-overdue';
+      case 'cancelled': return 'status-cancelled';
+      default: return '';
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="outbound-invoices-page">
+        <div className="page-header">
+          <h1>Sales Invoices</h1>
+        </div>
+        <p>Loading sales invoices...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="outbound-invoices-page">
+        <div className="page-header">
+          <h1>Sales Invoices</h1>
+        </div>
+        <p className="error-message">Error loading sales invoices: {(error as Error).message}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="outbound-invoices-page">
       <div className="page-header">
-        <h1>Sales invoices</h1>
+        <h1>Sales Invoices</h1>
         <div className="header-actions">
-          <button className="btn-primary">
+          <button className="btn-primary" onClick={() => setIsFormOpen(true)}>
             Create Invoice
           </button>
         </div>
@@ -26,14 +80,36 @@ const OutboundInvoices = () => {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>
-                No sales invoices found.
-              </td>
-            </tr>
+            {invoices && invoices.length > 0 ? (
+              invoices.map((invoice: SalesInvoice) => (
+                <tr key={invoice.uuid}>
+                  <td className="invoice-number">{invoice.invoiceNumber}</td>
+                  <td>{formatDate(invoice.invoiceDate)}</td>
+                  <td>{invoice.clientName}</td>
+                  <td className="amount">{formatCurrency(invoice.totalAmount)}</td>
+                  <td>{invoice.dueDate ? formatDate(invoice.dueDate) : '-'}</td>
+                  <td>
+                    <span className={`status-badge ${getStatusClass(invoice.status)}`}>
+                      {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>
+                  No sales invoices found. Click "Create Invoice" to get started.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
+
+      <SalesInvoiceForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+      />
     </div>
   );
 };

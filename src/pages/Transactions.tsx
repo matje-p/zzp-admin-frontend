@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
-import { useTransactions } from '../hooks/useTransactions';
+import { useTransactions, useSyncTransactions } from '../hooks/useTransactions';
 import type { Transaction } from '../hooks/useTransactions';
 import './Transactions.css';
 
 const Transactions = () => {
-  const { data: transactions, isLoading, error, refetch } = useTransactions();
+  const { data: transactions, isLoading, error } = useTransactions();
+  const syncMutation = useSyncTransactions();
   const [selectedAccount, setSelectedAccount] = useState<string>('all');
 
   const formatCurrency = (amount: number) => {
@@ -22,16 +23,22 @@ const Transactions = () => {
     return `${day}-${month}-${year}`;
   };
 
-  const handleSync = () => {
-    refetch();
+  const handleSync = async () => {
+    try {
+      await syncMutation.mutateAsync({ count: 200 });
+    } catch (error) {
+      console.error('Failed to sync transactions:', error);
+    }
   };
 
   const getCategory = (amount: number) => {
     return amount >= 0 ? 'Income' : 'Expense';
   };
 
-  const getStatus = (invoiceUuid: string | null): 'assigned' | 'unassigned' => {
-    return invoiceUuid ? 'assigned' : 'unassigned';
+  const getStatus = (transaction: Transaction): 'assigned' | 'unassigned' => {
+    // Use 'linked' field if available, otherwise fall back to checking invoiceUuid
+    const isLinked = transaction.linked !== undefined ? transaction.linked : !!transaction.invoiceUuid;
+    return isLinked ? 'assigned' : 'unassigned';
   };
 
   // Get unique account IDs
@@ -91,9 +98,9 @@ const Transactions = () => {
           <button
             className="btn-primary"
             onClick={handleSync}
-            disabled={isLoading}
+            disabled={syncMutation.isPending}
           >
-            {isLoading ? 'Loading...' : 'Refresh Transactions'}
+            {syncMutation.isPending ? 'Syncing...' : 'Refresh Transactions'}
           </button>
         </div>
       </div>
@@ -103,7 +110,6 @@ const Transactions = () => {
           <thead>
             <tr>
               <th>Date</th>
-              <th>Description</th>
               <th>Counterparty</th>
               <th>Account</th>
               <th>Category</th>
@@ -115,12 +121,11 @@ const Transactions = () => {
             {filteredTransactions && filteredTransactions.length > 0 ? (
               filteredTransactions.map((transaction: Transaction) => {
                 const category = getCategory(transaction.amount);
-                const status = getStatus(transaction.invoiceUuid);
+                const status = getStatus(transaction);
 
                 return (
                   <tr key={transaction.uuid}>
                     <td>{formatDate(transaction.created)}</td>
-                    <td>{transaction.description || '-'}</td>
                     <td>{transaction.counterpartyName || '-'}</td>
                     <td className="account-id">{transaction.monetaryAccountId}</td>
                     <td>
@@ -141,7 +146,7 @@ const Transactions = () => {
               })
             ) : (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '20px' }}>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>
                   No transactions found. Click "Refresh Transactions" to reload.
                 </td>
               </tr>

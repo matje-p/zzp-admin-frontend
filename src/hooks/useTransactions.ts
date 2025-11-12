@@ -15,6 +15,7 @@ export interface Transaction {
   created: string;
   category: string | null;
   invoiceUuid: string | null;
+  linked?: boolean;
 }
 
 // Backend response type
@@ -97,16 +98,28 @@ export const useDeleteTransaction = () => {
 export interface SyncTransactionsResponse {
   success: boolean;
   message: string;
-  fetched: number;
-  saved: number;
+  totalFetched: number;
+  totalSaved: number;
+  accounts: Array<{
+    accountId: number;
+    fetched: number;
+    saved: number;
+    error?: string;
+  }>;
+}
+
+export interface SyncTransactionsParams {
+  userId?: number;
+  monetaryAccountId?: number;
+  count?: number;
 }
 
 export const useSyncTransactions = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => {
-      const { data } = await apiClient.post<SyncTransactionsResponse>('/api/transactions/sync');
+    mutationFn: async (params?: SyncTransactionsParams) => {
+      const { data } = await apiClient.post<SyncTransactionsResponse>('/api/transactions/sync', params || {});
       return data;
     },
     onSuccess: () => {

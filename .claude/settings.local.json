@@ -33,7 +33,10 @@
       "Bash(git add src/hooks/useContacts.ts src/pages/Contacts.tsx)",
       "Bash(git add ../backend/src/services/subscription.service.ts ../backend/src/controllers/subscription.controller.ts ../backend/src/routes/subscription.routes.ts ../backend/src/index.ts)",
       "Bash(git add src/hooks/useSubscriptions.ts src/pages/Subscriptions.tsx)",
-      "Bash(git add src/hooks/usePurchaseInvoices.ts)"
+      "Bash(git add src/hooks/usePurchaseInvoices.ts)",
+      "Bash(curl:*)",
+      "Bash(cat:*)",
+      "Bash(xargs cat:*)"
     ],
     "deny": [],
     "ask": []
