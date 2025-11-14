@@ -15,7 +15,7 @@ export interface Transaction {
   created: string;
   category: string | null;
   invoiceUuid: string | null;
-  linked?: boolean;
+  amountAllocated?: number;
 }
 
 // Backend response type

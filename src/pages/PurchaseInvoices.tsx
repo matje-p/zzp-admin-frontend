@@ -279,6 +279,64 @@ const PurchaseInvoices = () => {
     return `${day}-${month}-${year}`;
   };
 
+  const getPaymentStatus = (invoice: PurchaseInvoice): 'linked' | 'partially-linked' | 'unlinked' => {
+    const amountAllocated = invoice.amountAllocated ?? 0;
+    const invoiceAmount = Math.abs(invoice.amount);
+
+    // If amountAllocated is 0 or NaN, it's not linked
+    if (!amountAllocated || isNaN(amountAllocated)) {
+      return 'unlinked';
+    }
+
+    const absAmountAllocated = Math.abs(amountAllocated);
+
+    // If amountAllocated equals invoice amount, it's fully linked
+    if (absAmountAllocated === invoiceAmount) {
+      return 'linked';
+    }
+
+    // If amountAllocated is non-zero but less than invoice amount, it's partially linked
+    if (absAmountAllocated > 0 && absAmountAllocated < invoiceAmount) {
+      return 'partially-linked';
+    }
+
+    return 'unlinked';
+  };
+
+  const formatPeriod = (startDate: string | null, endDate: string | null): string => {
+    if (!startDate || !endDate) {
+      return '-';
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const startDay = start.getDate();
+    const startMonth = start.toLocaleString('en-US', { month: 'short' });
+    const endDay = end.getDate();
+    const endMonth = end.toLocaleString('en-US', { month: 'short' });
+    const endYear = end.getFullYear();
+
+    // Format: "5 Jul to 5 Aug 2025"
+    if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
+      // Same month and year: "5 to 15 Jul 2025"
+      return `${startDay} to ${endDay} ${endMonth} ${endYear}`;
+    } else if (start.getFullYear() === end.getFullYear()) {
+      // Same year but different months: "5 Jul to 5 Aug 2025"
+      return `${startDay} ${startMonth} to ${endDay} ${endMonth} ${endYear}`;
+    } else {
+      // Different years: "5 Jul 2024 to 5 Aug 2025"
+      const startYear = start.getFullYear();
+      return `${startDay} ${startMonth} ${startYear} to ${endDay} ${endMonth} ${endYear}`;
+    }
+  };
+
+  const truncateDescription = (description: string | null, maxLength: number = 40): string => {
+    if (!description) return '-';
+    if (description.length <= maxLength) return description;
+    return description.substring(0, maxLength) + '...';
+  };
+
   if (isLoading) {
     return (
       <div className="purchase-invoices-page">
@@ -364,13 +422,14 @@ const PurchaseInvoices = () => {
         <table className="purchase-invoices-table">
           <thead>
             <tr>
-              <th>Status</th>
-              <th>Date</th>
+              <th>Invoice Date</th>
               <th>Contact Name</th>
               <th>Description</th>
               <th>Category</th>
               <th>Amount</th>
               <th>Type</th>
+              <th>Period</th>
+              <th>File</th>
               <th>Payment</th>
               <th>Actions</th>
             </tr>
@@ -384,15 +443,17 @@ const PurchaseInvoices = () => {
                   className="clickable-row"
                 >
                   <td>
-                    <span
-                      className={`status-badge ${invoice.documentUuid ? 'status-uploaded' : 'status-expected'}`}
-                    >
-                      {invoice.documentUuid ? 'Uploaded' : 'Expected'}
-                    </span>
+                    <div>
+                      {formatDate(invoice.invoiceSentDate)}
+                      {!invoice.filePath && (
+                        <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>
+                          (expected)
+                        </div>
+                      )}
+                    </div>
                   </td>
-                  <td>{formatDate(invoice.invoiceSentDate)}</td>
                   <td>{invoice.contactName || "-"}</td>
-                  <td>{invoice.description || "-"}</td>
+                  <td>{truncateDescription(invoice.description)}</td>
                   <td>{invoice.category || "-"}</td>
                   <td className="amount-positive">
                     {formatCurrency(invoice.amount)}
@@ -402,11 +463,21 @@ const PurchaseInvoices = () => {
                       {invoice.subscriptionUuid ? 'Subscription' : 'One-off'}
                     </span>
                   </td>
+                  <td>{formatPeriod(invoice.periodStartDate, invoice.periodEndDate)}</td>
                   <td>
                     <span
-                      className={`status-badge ${invoice.transactionUuid ? 'status-linked' : 'status-unlinked'}`}
+                      className={`status-badge ${invoice.filePath ? 'status-uploaded' : 'status-expected'}`}
                     >
-                      {invoice.transactionUuid ? 'Linked' : 'Not linked'}
+                      {invoice.filePath ? 'Uploaded' : 'Not uploaded'}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      className={`status-badge status-${getPaymentStatus(invoice)}`}
+                    >
+                      {getPaymentStatus(invoice) === 'linked' ? 'Linked' :
+                       getPaymentStatus(invoice) === 'partially-linked' ? 'Partially Linked' :
+                       'Not Linked'}
                     </span>
                   </td>
                   <td>
@@ -423,7 +494,7 @@ const PurchaseInvoices = () => {
             ) : (
               <tr>
                 <td
-                  colSpan={9}
+                  colSpan={10}
                   style={{ textAlign: "center", padding: "20px" }}
                 >
                   No invoices found. Click "Refresh Invoices" to reload.
@@ -492,6 +563,10 @@ const PurchaseInvoices = () => {
                         <td className="detail-value">{selectedInvoice.category || "-"}</td>
                       </tr>
                       <tr>
+                        <td className="detail-label">Period:</td>
+                        <td className="detail-value">{formatPeriod(selectedInvoice.periodStartDate, selectedInvoice.periodEndDate)}</td>
+                      </tr>
+                      <tr>
                         <td className="detail-label">Amount:</td>
                         <td className="detail-value">{formatCurrency(selectedInvoice.amount)}</td>
                       </tr>
@@ -534,8 +609,10 @@ const PurchaseInvoices = () => {
                       <tr>
                         <td className="detail-label">Payment:</td>
                         <td className="detail-value">
-                          <span className={`status-badge ${selectedInvoice.transactionUuid ? 'status-linked' : 'status-unlinked'}`}>
-                            {selectedInvoice.transactionUuid ? 'Linked' : 'Not linked'}
+                          <span className={`status-badge status-${getPaymentStatus(selectedInvoice)}`}>
+                            {getPaymentStatus(selectedInvoice) === 'linked' ? 'Linked' :
+                             getPaymentStatus(selectedInvoice) === 'partially-linked' ? 'Partially Linked' :
+                             'Not Linked'}
                           </span>
                         </td>
                       </tr>

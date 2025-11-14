@@ -23,6 +23,9 @@ export interface PurchaseInvoice {
   transactionUuid: string | null;
   filePath: string | null;
   filename: string | null;
+  amountAllocated?: number;
+  periodStartDate: string | null;
+  periodEndDate: string | null;
   document?: {
     uuid: string;
     filename: string;

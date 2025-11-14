@@ -1,27 +1,101 @@
 .pl-page {
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 24px;
 }
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 1rem;
+  margin-bottom: 24px;
 }
 
 .page-header h1 {
-  font-size: 2rem;
-  font-weight: 600;
-  color: #1e293b;
   margin: 0;
+  font-size: 28px;
+  color: #1a1a1a;
 }
 
 .pl-content {
-  background-color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pl-section {
+  background: white;
   border-radius: 8px;
-  padding: 2rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+}
+
+.pl-section.result-section {
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: 16px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.section-total {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.section-total.positive {
+  color: #059669;
+}
+
+.section-total.negative {
+  color: #dc2626;
+}
+
+.result-section .section-total {
+  font-size: 28px;
+}
+
+.pl-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pl-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-radius: 6px;
+}
+
+.item-name {
+  font-size: 14px;
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.item-amount {
+  font-size: 14px;
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 32px;
+  color: #6b7280;
+  font-size: 14px;
 }

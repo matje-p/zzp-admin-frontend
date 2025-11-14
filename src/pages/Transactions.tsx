@@ -35,10 +35,28 @@ const Transactions = () => {
     return amount >= 0 ? 'Income' : 'Expense';
   };
 
-  const getStatus = (transaction: Transaction): 'assigned' | 'unassigned' => {
-    // Use 'linked' field if available, otherwise fall back to checking invoiceUuid
-    const isLinked = transaction.linked !== undefined ? transaction.linked : !!transaction.invoiceUuid;
-    return isLinked ? 'assigned' : 'unassigned';
+  const getStatus = (transaction: Transaction): 'assigned' | 'partially-assigned' | 'unassigned' => {
+    const amountAllocated = transaction.amountAllocated ?? 0;
+    const transactionAmount = Math.abs(transaction.amount);
+
+    // If amountAllocated is 0 or NaN, it's not linked
+    if (!amountAllocated || isNaN(amountAllocated)) {
+      return 'unassigned';
+    }
+
+    const absAmountAllocated = Math.abs(amountAllocated);
+
+    // If amountAllocated equals transaction amount, it's fully linked
+    if (absAmountAllocated === transactionAmount) {
+      return 'assigned';
+    }
+
+    // If amountAllocated is non-zero but less than transaction amount, it's partially linked
+    if (absAmountAllocated > 0 && absAmountAllocated < transactionAmount) {
+      return 'partially-assigned';
+    }
+
+    return 'unassigned';
   };
 
   // Get unique account IDs
@@ -138,7 +156,9 @@ const Transactions = () => {
                     </td>
                     <td>
                       <span className={`status-badge status-${status}`}>
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                        {status === 'assigned' ? 'Linked' :
+                         status === 'partially-assigned' ? 'Partially Linked' :
+                         'Not Linked'}
                       </span>
                     </td>
                   </tr>

@@ -271,14 +271,19 @@
   color: #065f46;
 }
 
+.status-badge.status-partially-linked {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
 .status-badge.status-unlinked {
-  background-color: #fee2e2;
-  color: #991b1b;
+  background-color: #f3f4f6;
+  color: #4b5563;
 }
 
 .status-badge.status-uploaded {
-  background-color: #dbeafe;
-  color: #1e40af;
+  background-color: #d1fae5;
+  color: #065f46;
 }
 
 .status-badge.status-expected {
