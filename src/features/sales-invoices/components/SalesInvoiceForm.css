@@ -154,12 +154,9 @@
 
 .modal-footer {
   display: flex;
-  justify-content: flex-end;
   gap: 12px;
   padding: 16px 24px;
-  border-top: 1px solid var(--border-color, #333);
   margin: 0 -24px -24px -24px;
-  background-color: var(--footer-bg, #1a1a1a);
   border-radius: 0 0 8px 8px;
 }
 

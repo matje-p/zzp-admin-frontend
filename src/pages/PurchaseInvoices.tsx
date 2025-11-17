@@ -1,26 +1,25 @@
 import React, { useState, useCallback } from "react";
-import { Trash2 } from "lucide-react";
 import {
   usePurchaseInvoices,
   useDeletePurchaseInvoice,
-  useContacts,
-  useExpenseAccounts,
   useFileUpload,
   useInvoiceModal,
   FileUploadDropzone,
   InvoiceDetailModal,
   DeleteConfirmModal,
   UnsavedChangesModal,
-  getPaymentStatus,
+  PurchaseInvoicesTable,
 } from "../features/purchase-invoices";
-import type { PurchaseInvoice } from "../types";
+import { useContacts } from "../features/contacts";
+import { useExpenseAccounts } from "../features/accounts";
+import { useSubscriptions } from "../features/subscriptions";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
-import { formatCurrency, formatDate, formatPeriod, truncateDescription } from "../utils/formatters";
 import "./PurchaseInvoices.css";
 
 const PurchaseInvoices = () => {
   const { data: invoices, isLoading, error, refetch } = usePurchaseInvoices();
   const { data: contacts } = useContacts();
+  const { data: subscriptions } = useSubscriptions();
   const { data: expenseAccounts } = useExpenseAccounts();
   const deleteInvoiceMutation = useDeletePurchaseInvoice();
 
@@ -135,111 +134,11 @@ const PurchaseInvoices = () => {
         onFileInputChange={handleFileInputChange}
       />
 
-      <div className="purchase-invoices-table-container">
-        <table className="purchase-invoices-table">
-          <thead>
-            <tr>
-              <th>Invoice Date</th>
-              <th>Contact Name</th>
-              <th>Description</th>
-              <th>Category</th>
-              <th>Amount</th>
-              <th>Type</th>
-              <th>Period</th>
-              <th>File</th>
-              <th>Payment</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {invoices && invoices.length > 0 ? (
-              invoices.map((invoice: PurchaseInvoice) => (
-                <tr
-                  key={invoice.purchaseInvoiceUploadUuid}
-                  onClick={() => handleOpenInvoice(invoice)}
-                  className="clickable-row"
-                >
-                  <td>
-                    <div>
-                      {formatDate(invoice.invoiceSentDate)}
-                      {!invoice.filePath && (
-                        <div
-                          style={{
-                            fontSize: "11px",
-                            color: "#6b7280",
-                            marginTop: "2px",
-                          }}
-                        >
-                          (expected)
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td>{invoice.contact?.name || invoice.contactName || "-"}</td>
-                  <td>{truncateDescription(invoice.description)}</td>
-                  <td>{invoice.category || "-"}</td>
-                  <td className="amount-positive">
-                    {formatCurrency(invoice.amount)}
-                  </td>
-                  <td className="type-cell">
-                    <span className="subscription-badge">
-                      {invoice.subscriptionUuid ? "Subscription" : "One-off"}
-                    </span>
-                  </td>
-                  <td>
-                    {formatPeriod(
-                      invoice.periodStartDate,
-                      invoice.periodEndDate
-                    )}
-                  </td>
-                  <td>
-                    <span
-                      className={`status-badge ${
-                        invoice.filePath ? "status-uploaded" : "status-expected"
-                      }`}
-                    >
-                      {invoice.filePath ? "Uploaded" : "Not uploaded"}
-                    </span>
-                  </td>
-                  <td>
-                    <span
-                      className={`status-badge status-${getPaymentStatus(
-                        invoice
-                      )}`}
-                    >
-                      {getPaymentStatus(invoice) === "linked"
-                        ? "Linked"
-                        : getPaymentStatus(invoice) === "partially-linked"
-                        ? "Partially Linked"
-                        : "Not Linked"}
-                    </span>
-                  </td>
-                  <td>
-                    <button
-                      className="delete-button"
-                      onClick={(e) =>
-                        handleDeleteClick(e, invoice.purchaseInvoiceUploadUuid)
-                      }
-                      title="Delete invoice"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={10}
-                  style={{ textAlign: "center", padding: "20px" }}
-                >
-                  No invoices found. Click "Refresh Invoices" to reload.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <PurchaseInvoicesTable
+        invoices={invoices}
+        onRowClick={handleOpenInvoice}
+        onDeleteClick={handleDeleteClick}
+      />
 
       <DeleteConfirmModal
         isOpen={deleteModalOpen}
@@ -252,6 +151,7 @@ const PurchaseInvoices = () => {
         invoice={selectedInvoice}
         isCreating={isCreatingInvoice}
         contacts={contacts}
+        subscriptions={subscriptions}
         expenseAccounts={expenseAccounts}
         onClose={handleCloseDetailModal}
         onSave={handleSaveInvoice}

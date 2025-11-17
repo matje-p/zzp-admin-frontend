@@ -2,6 +2,8 @@
  * Invoice-related type definitions
  */
 
+import type { Subscription } from './subscription';
+
 export interface PurchaseInvoiceLine {
   uuid: string;
   quantity: number;
@@ -33,6 +35,8 @@ export interface PurchaseInvoice {
   contactName: string | null;
   contactUuid: string | null;
   contact?: Contact;
+  subscriptionUuid: string | null;
+  subscription?: Subscription;
   category: string | null;
   amount: number;
   amountExclVat: number | null;
@@ -45,7 +49,6 @@ export interface PurchaseInvoice {
   description: string | null;
   notes: string | null;
   documentUuid: string | null;
-  subscriptionUuid: string | null;
   transactionUuid: string | null;
   filePath: string | null;
   filename: string | null;

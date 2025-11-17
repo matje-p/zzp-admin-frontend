@@ -13,6 +13,7 @@ export { InvoiceDetailModal } from './components/InvoiceDetailModal';
 export { DeleteConfirmModal } from './components/DeleteConfirmModal';
 export { UnsavedChangesModal } from './components/UnsavedChangesModal';
 export { FileUploadDropzone } from './components/FileUploadDropzone';
+export { PurchaseInvoicesTable } from './components/PurchaseInvoicesTable';
 
 // Utils
 export * from './utils/invoiceHelpers';

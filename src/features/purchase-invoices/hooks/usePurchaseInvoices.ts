@@ -3,8 +3,6 @@ import { apiClient } from '../../../lib/api';
 import type {
   PurchaseInvoice,
   PurchaseInvoiceLine,
-  Contact,
-  Account,
   InvoiceStats,
   ExtractInvoiceResponse,
   PurchaseInvoicesResponse,
@@ -230,29 +228,5 @@ export const usePurchaseInvoicesBySubscription = (subscriptionUuid: string) => {
       return data.invoices;
     },
     enabled: !!subscriptionUuid,
-  });
-};
-
-// Fetch all contacts
-export const useContacts = () => {
-  return useQuery({
-    queryKey: ['contacts'],
-    queryFn: async () => {
-      const { data } = await apiClient.get<{ total: number; contacts: Contact[] }>('/api/contact');
-      return data.contacts;
-    },
-  });
-};
-
-// Fetch expense accounts
-export const useExpenseAccounts = () => {
-  return useQuery({
-    queryKey: ['accounts', 'expense'],
-    queryFn: async () => {
-      const { data } = await apiClient.get<{ success: boolean; data: Account[] }>('/api/accounting/accounts', {
-        params: { type: 'expense' }
-      });
-      return data.data;
-    },
   });
 };
