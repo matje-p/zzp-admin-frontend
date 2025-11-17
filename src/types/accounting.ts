@@ -3,9 +3,9 @@
  */
 
 export interface ProfitAndLossLineItem {
+  code: string;
   name: string;
   amount: number;
-  category?: string;
 }
 
 export interface ProfitAndLossSection {
@@ -15,16 +15,18 @@ export interface ProfitAndLossSection {
 
 export interface ProfitAndLossData {
   revenue: ProfitAndLossSection;
-  costs: ProfitAndLossSection;
+  expenses: ProfitAndLossSection;
   period: {
-    startDate: string;
-    endDate: string;
+    startDate: string | null;
+    endDate: string | null;
   };
+  netProfit: number;
+  netProfitPercentage: number;
 }
 
 export interface ProfitAndLossResult {
   revenue: number;
-  costs: number;
+  expenses: number;
   result: number;
   margin: number; // Percentage
 }

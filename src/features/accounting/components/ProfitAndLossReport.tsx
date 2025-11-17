@@ -36,17 +36,17 @@ export const ProfitAndLossReport: React.FC<ProfitAndLossReportProps> = ({ data }
         )}
       </div>
 
-      {/* Costs Section */}
+      {/* Expenses Section */}
       <div className="pl-section">
         <div className="section-header">
-          <h2>Costs</h2>
-          <div className="section-total negative">{formatCurrency(data.costs.total)}</div>
+          <h2>Expenses</h2>
+          <div className="section-total negative">{formatCurrency(data.expenses.total)}</div>
         </div>
-        {data.costs.items.length === 0 ? (
-          <div className="empty-state">No cost data available</div>
+        {data.expenses.items.length === 0 ? (
+          <div className="empty-state">No expense data available</div>
         ) : (
           <div className="pl-items">
-            {data.costs.items.map((item, index) => (
+            {data.expenses.items.map((item, index) => (
               <div key={index} className="pl-item">
                 <span className="item-name">{item.name}</span>
                 <span className="item-amount">{formatCurrency(item.amount)}</span>

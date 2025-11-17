@@ -6,17 +6,17 @@
 import type { ProfitAndLossData, ProfitAndLossResult } from '../../../types';
 
 /**
- * Calculate P&L result metrics from revenue and costs
+ * Calculate P&L result metrics from revenue and expenses
  */
 export function calculateProfitAndLossResult(data: ProfitAndLossData): ProfitAndLossResult {
   const revenue = data.revenue.total;
-  const costs = data.costs.total;
-  const result = revenue - costs;
+  const expenses = data.expenses.total;
+  const result = revenue - expenses;
   const margin = revenue > 0 ? (result / revenue) * 100 : 0;
 
   return {
     revenue,
-    costs,
+    expenses,
     result,
     margin,
   };
