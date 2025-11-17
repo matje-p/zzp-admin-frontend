@@ -370,7 +370,137 @@
 }
 
 .invoice-detail-left {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   overflow-y: auto;
+}
+
+.invoice-detail-top {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+}
+
+.detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.field-value {
+  font-size: 14px;
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.invoice-detail-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.invoice-lines-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.invoice-detail-bottom h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.btn-add-line {
+  padding: 6px 12px;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-add-line:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-add-line:active {
+  transform: scale(0.98);
+}
+
+.invoice-lines-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.invoice-lines-table thead {
+  background-color: #f9fafb;
+}
+
+.invoice-lines-table th {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #6b7280;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.invoice-lines-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.invoice-lines-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.invoice-lines-table td {
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #1f2937;
+}
+
+.invoice-lines-table .amount-cell {
+  text-align: right;
+  font-family: 'Courier New', monospace;
+}
+
+.invoice-lines-table .no-lines-message {
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
+  padding: 20px;
+}
+
+.invoice-lines-table tfoot {
+  background-color: #f9fafb;
+  border-top: 2px solid #e5e7eb;
+}
+
+.invoice-lines-table tfoot .total-row td {
+  padding: 12px;
+  font-size: 14px;
 }
 
 .invoice-detail-right {

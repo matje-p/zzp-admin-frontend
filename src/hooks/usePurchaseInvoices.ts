@@ -1,6 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../lib/api';
 
+export interface PurchaseInvoiceLine {
+  uuid: string;
+  quantity: number;
+  description: string | null;
+  amountExclVat: number;
+  vatPercentage: number | null;
+  category: string | null;
+}
+
 export interface PurchaseInvoice {
   purchaseInvoiceUploadUuid: string;
   invoiceNumber: string;
@@ -26,6 +35,7 @@ export interface PurchaseInvoice {
   amountAllocated?: number;
   periodStartDate: string | null;
   periodEndDate: string | null;
+  lines?: PurchaseInvoiceLine[];
   document?: {
     uuid: string;
     filename: string;

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Trash2 } from "lucide-react";
 import { usePurchaseInvoices, useDeletePurchaseInvoice } from "../hooks/usePurchaseInvoices";
-import type { PurchaseInvoice } from "../hooks/usePurchaseInvoices";
+import type { PurchaseInvoice, PurchaseInvoiceLine } from "../hooks/usePurchaseInvoices";
 import "./PurchaseInvoices.css";
 
 interface ProcessingStatus {
@@ -535,120 +535,76 @@ const PurchaseInvoices = () => {
             </div>
             <div className="invoice-detail-content">
               <div className="invoice-detail-left">
-                <div className="invoice-details">
-                  <table className="details-table">
+                {/* Top Section - Key Information */}
+                <div className="invoice-detail-top">
+                  <div className="detail-field">
+                    <span className="field-label">Contact</span>
+                    <span className="field-value">{selectedInvoice.contactName || "-"}</span>
+                  </div>
+                  <div className="detail-field">
+                    <span className="field-label">Description</span>
+                    <span className="field-value">{selectedInvoice.description || "-"}</span>
+                  </div>
+                  <div className="detail-field">
+                    <span className="field-label">Invoice Date</span>
+                    <span className="field-value">{formatDate(selectedInvoice.invoiceSentDate)}</span>
+                  </div>
+                  <div className="detail-field">
+                    <span className="field-label">Period</span>
+                    <span className="field-value">{formatPeriod(selectedInvoice.periodStartDate, selectedInvoice.periodEndDate)}</span>
+                  </div>
+                  <div className="detail-field">
+                    <span className="field-label">Subscription</span>
+                    <span className="field-value">
+                      <span className="subscription-badge">
+                        {selectedInvoice.subscriptionUuid ? 'Subscription' : 'One-off'}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bottom Section - Invoice Lines */}
+                <div className="invoice-detail-bottom">
+                  <div className="invoice-lines-header">
+                    <h3>Invoice Lines</h3>
+                    <button className="btn-add-line">Add line</button>
+                  </div>
+                  <table className="invoice-lines-table">
+                    <thead>
+                      <tr>
+                        <th>Quantity</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>VAT</th>
+                        <th>Category</th>
+                      </tr>
+                    </thead>
                     <tbody>
-                      <tr>
-                        <td className="detail-label">UUID:</td>
-                        <td className="detail-value">{selectedInvoice.purchaseInvoiceUploadUuid || "-"}</td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">Invoice Number:</td>
-                        <td className="detail-value">{selectedInvoice.invoiceNumber || "-"}</td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">Invoice Sent Date:</td>
-                        <td className="detail-value">{formatDate(selectedInvoice.invoiceSentDate)}</td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">Due Date:</td>
-                        <td className="detail-value">{selectedInvoice.dueDate ? formatDate(selectedInvoice.dueDate) : "-"}</td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">Contact Name:</td>
-                        <td className="detail-value">{selectedInvoice.contactName || "-"}</td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">Category:</td>
-                        <td className="detail-value">{selectedInvoice.category || "-"}</td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">Period:</td>
-                        <td className="detail-value">{formatPeriod(selectedInvoice.periodStartDate, selectedInvoice.periodEndDate)}</td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">Amount:</td>
-                        <td className="detail-value">{formatCurrency(selectedInvoice.amount)}</td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">Amount (excl. VAT):</td>
-                        <td className="detail-value">{selectedInvoice.amountExclVat ? formatCurrency(selectedInvoice.amountExclVat) : "-"}</td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">VAT Amount:</td>
-                        <td className="detail-value">{selectedInvoice.vatAmount ? formatCurrency(selectedInvoice.vatAmount) : "-"}</td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">VAT Percentage:</td>
-                        <td className="detail-value">{selectedInvoice.vatPercentage ? `${selectedInvoice.vatPercentage}%` : "-"}</td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">Currency:</td>
-                        <td className="detail-value">{selectedInvoice.currency || "-"}</td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">Status:</td>
-                        <td className="detail-value">{selectedInvoice.status || "-"}</td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">Document Status:</td>
-                        <td className="detail-value">
-                          <span className={`status-badge ${selectedInvoice.documentUuid ? 'status-uploaded' : 'status-expected'}`}>
-                            {selectedInvoice.documentUuid ? 'Uploaded' : 'Expected'}
-                          </span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">Type:</td>
-                        <td className="detail-value">
-                          <span className="subscription-badge">
-                            {selectedInvoice.subscriptionUuid ? 'Subscription' : 'One-off'}
-                          </span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">Payment:</td>
-                        <td className="detail-value">
-                          <span className={`status-badge status-${getPaymentStatus(selectedInvoice)}`}>
-                            {getPaymentStatus(selectedInvoice) === 'linked' ? 'Linked' :
-                             getPaymentStatus(selectedInvoice) === 'partially-linked' ? 'Partially Linked' :
-                             'Not Linked'}
-                          </span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">Paid At:</td>
-                        <td className="detail-value">{selectedInvoice.paidAt ? formatDate(selectedInvoice.paidAt) : "-"}</td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">Payment Method:</td>
-                        <td className="detail-value">{selectedInvoice.paymentMethod || "-"}</td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">Description:</td>
-                        <td className="detail-value">{selectedInvoice.description || "-"}</td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">Notes:</td>
-                        <td className="detail-value">{selectedInvoice.notes || "-"}</td>
-                      </tr>
-                      <tr>
-                        <td className="detail-label">Document UUID:</td>
-                        <td className="detail-value">{selectedInvoice.documentUuid || "-"}</td>
-                      </tr>
-                      {selectedInvoice.subscriptionUuid && (
+                      {selectedInvoice.lines && selectedInvoice.lines.length > 0 ? (
+                        selectedInvoice.lines.map((line) => (
+                          <tr key={line.uuid}>
+                            <td>{line.quantity}</td>
+                            <td>{line.description || "-"}</td>
+                            <td className="amount-cell">{formatCurrency(line.amountExclVat)}</td>
+                            <td>{line.vatPercentage ? `${line.vatPercentage}%` : "-"}</td>
+                            <td>{line.category || "-"}</td>
+                          </tr>
+                        ))
+                      ) : (
                         <tr>
-                          <td className="detail-label">Subscription UUID:</td>
-                          <td className="detail-value">{selectedInvoice.subscriptionUuid}</td>
-                        </tr>
-                      )}
-                      {selectedInvoice.transactionUuid && (
-                        <tr>
-                          <td className="detail-label">Transaction UUID:</td>
-                          <td className="detail-value">{selectedInvoice.transactionUuid}</td>
+                          <td colSpan={5} className="no-lines-message">
+                            No invoice lines available
+                          </td>
                         </tr>
                       )}
                     </tbody>
+                    <tfoot>
+                      <tr className="total-row">
+                        <td colSpan={2}>Total</td>
+                        <td className="amount-cell">{formatCurrency(selectedInvoice.amount)}</td>
+                        <td colSpan={2}></td>
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
               </div>
