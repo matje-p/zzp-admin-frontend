@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Trash2 } from 'lucide-react';
-import { useSubscriptions, useCancelSubscription } from '../hooks/useSubscriptions';
-import type { Subscription } from '../hooks/useSubscriptions';
-import { usePurchaseInvoicesBySubscription } from '../hooks/usePurchaseInvoices';
+import { useSubscriptions, useCancelSubscription } from '../features/subscriptions';
+import type { Subscription } from '../types';
+import { usePurchaseInvoicesBySubscription } from '../features/purchase-invoices';
+import { formatCurrency, formatDate, formatBillingCycle } from '../utils/formatters';
 import './Subscriptions.css';
 
 const Subscriptions = () => {
@@ -65,32 +66,6 @@ const Subscriptions = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [deleteModalOpen, selectedSubscription, handleDeleteConfirm, handleDeleteCancel]);
-
-  const formatCurrency = (amount: number, currency: string = 'EUR') => {
-    return new Intl.NumberFormat('nl-NL', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  };
-
-  const formatBillingCycle = (cycle: string) => {
-    const cycles: { [key: string]: string } = {
-      'monthly': 'Monthly',
-      'quarterly': 'Quarterly',
-      'yearly': 'Yearly',
-      'weekly': 'Weekly'
-    };
-    return cycles[cycle] || cycle;
-  };
 
   if (isLoading) {
     return (
@@ -200,9 +175,6 @@ const Subscriptions = () => {
         <SubscriptionDetailModal
           subscription={selectedSubscription}
           onClose={handleCloseDetailModal}
-          formatCurrency={formatCurrency}
-          formatDate={formatDate}
-          formatBillingCycle={formatBillingCycle}
         />
       )}
     </div>
@@ -212,17 +184,11 @@ const Subscriptions = () => {
 interface SubscriptionDetailModalProps {
   subscription: Subscription;
   onClose: () => void;
-  formatCurrency: (amount: number, currency?: string) => string;
-  formatDate: (dateString: string | null) => string;
-  formatBillingCycle: (cycle: string) => string;
 }
 
 const SubscriptionDetailModal: React.FC<SubscriptionDetailModalProps> = ({
   subscription,
   onClose,
-  formatCurrency,
-  formatDate,
-  formatBillingCycle,
 }) => {
   const { data: invoices, isLoading: loadingInvoices } = usePurchaseInvoicesBySubscription(subscription.uuid);
 

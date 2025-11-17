@@ -1,80 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../lib/api';
-
-export interface PurchaseInvoiceLine {
-  uuid: string;
-  quantity: number;
-  description: string | null;
-  amountExclVat: number;
-  vatPercentage: number | null;
-  category: string | null;
-}
-
-export interface PurchaseInvoice {
-  purchaseInvoiceUploadUuid: string;
-  invoiceNumber: string;
-  invoiceSentDate: string;
-  dueDate: string | null;
-  contactName: string | null;
-  category: string | null;
-  amount: number;
-  amountExclVat: number | null;
-  vatAmount: number | null;
-  vatPercentage: number | null;
-  currency: string;
-  status: string;
-  paidAt: string | null;
-  paymentMethod: string | null;
-  description: string | null;
-  notes: string | null;
-  documentUuid: string | null;
-  subscriptionUuid: string | null;
-  transactionUuid: string | null;
-  filePath: string | null;
-  filename: string | null;
-  amountAllocated?: number;
-  periodStartDate: string | null;
-  periodEndDate: string | null;
-  lines?: PurchaseInvoiceLine[];
-  document?: {
-    uuid: string;
-    filename: string;
-    filePath?: string;
-  };
-  bankTransactions?: any[];
-}
-
-// Backend response types
-interface PurchaseInvoicesResponse {
-  total: number;
-  invoices: PurchaseInvoice[];
-}
-
-interface StandardResponse<T> {
-  success: boolean;
-  count?: number;
-  data: T;
-}
-
-interface InvoiceStats {
-  total: number;
-  unpaid: number;
-  paid: number;
-  overdue: number;
-  totalAmount: number;
-  unpaidAmount: number;
-  paidAmount: number;
-}
-
-interface ExtractInvoiceResponse {
-  message: string;
-  invoice: PurchaseInvoice;
-  metadata: {
-    sessionId: string;
-    provider: string;
-    model: string;
-  };
-}
+import { apiClient } from '../../../lib/api';
+import type {
+  PurchaseInvoice,
+  PurchaseInvoiceLine,
+  Contact,
+  Account,
+  InvoiceStats,
+  ExtractInvoiceResponse,
+  PurchaseInvoicesResponse,
+  StandardResponse,
+} from '../../../types';
 
 // Fetch all purchase invoices
 export const usePurchaseInvoices = () => {
@@ -173,13 +108,35 @@ export const useExtractPurchaseInvoice = () => {
   });
 };
 
+// Create purchase invoice
+export const useCreatePurchaseInvoice = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (invoice: Omit<PurchaseInvoice, 'purchaseInvoiceUploadUuid'>) => {
+      const { data } = await apiClient.post<StandardResponse<PurchaseInvoice>>('/api/purchase-invoice', invoice);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchaseInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+    },
+  });
+};
+
 // Update purchase invoice
 export const useUpdatePurchaseInvoice = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ uuid, ...updates }: Partial<PurchaseInvoice> & { uuid: string }) => {
-      const { data } = await apiClient.put<StandardResponse<PurchaseInvoice>>(`/api/purchase-invoice/${uuid}`, updates);
+    mutationFn: async ({ uuid, lines, ...updates }: Partial<PurchaseInvoice> & { uuid: string }) => {
+      // Include line items if present
+      const payload = {
+        ...updates,
+        ...(lines && { lineItems: lines })
+      };
+      const { data } = await apiClient.put<StandardResponse<PurchaseInvoice>>(`/api/purchase-invoice/${uuid}`, payload);
       return data.data;
     },
     onSuccess: () => {
@@ -227,6 +184,41 @@ export const useDeletePurchaseInvoice = () => {
   });
 };
 
+// Add purchase invoice line
+export const useAddPurchaseInvoiceLine = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ invoiceUuid, line }: { invoiceUuid: string; line: Omit<PurchaseInvoiceLine, 'uuid'> }) => {
+      const { data } = await apiClient.post<StandardResponse<PurchaseInvoiceLine>>(
+        `/api/purchase-invoice/${invoiceUuid}/lines`,
+        line
+      );
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchaseInvoices'] });
+    },
+  });
+};
+
+// Delete purchase invoice line
+export const useDeletePurchaseInvoiceLine = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ invoiceUuid, lineUuid }: { invoiceUuid: string; lineUuid: string }) => {
+      const { data } = await apiClient.delete<StandardResponse<void>>(
+        `/api/purchase-invoice/${invoiceUuid}/lines/${lineUuid}`
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchaseInvoices'] });
+    },
+  });
+};
+
 // Fetch invoices by subscription
 export const usePurchaseInvoicesBySubscription = (subscriptionUuid: string) => {
   return useQuery({
@@ -238,5 +230,29 @@ export const usePurchaseInvoicesBySubscription = (subscriptionUuid: string) => {
       return data.invoices;
     },
     enabled: !!subscriptionUuid,
+  });
+};
+
+// Fetch all contacts
+export const useContacts = () => {
+  return useQuery({
+    queryKey: ['contacts'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ total: number; contacts: Contact[] }>('/api/contact');
+      return data.contacts;
+    },
+  });
+};
+
+// Fetch expense accounts
+export const useExpenseAccounts = () => {
+  return useQuery({
+    queryKey: ['accounts', 'expense'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ success: boolean; data: Account[] }>('/api/accounting/accounts', {
+        params: { type: 'expense' }
+      });
+      return data.data;
+    },
   });
 };

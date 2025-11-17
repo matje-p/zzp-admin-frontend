@@ -1,12 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/Layout';
+import { Layout } from './components/layout';
 import Transactions from './pages/Transactions';
 import PurchaseInvoices from './pages/PurchaseInvoices';
-import OutboundInvoices from './pages/OutboundInvoices';
+import SalesInvoices from './pages/SalesInvoices';
 import Contacts from './pages/Contacts';
 import Subscriptions from './pages/Subscriptions';
 import Todos from './pages/Todos';
-import PL from './pages/PL';
+import ProfitAndLoss from './pages/ProfitAndLoss';
 import BalanceSheet from './pages/BalanceSheet';
 import './App.css';
 
@@ -19,10 +19,10 @@ function App() {
           <Route path="todos" element={<Todos />} />
           <Route path="transactions" element={<Transactions />} />
           <Route path="purchase-invoices" element={<PurchaseInvoices />} />
-          <Route path="outbound-invoices" element={<OutboundInvoices />} />
+          <Route path="outbound-invoices" element={<SalesInvoices />} />
           <Route path="contacts" element={<Contacts />} />
           <Route path="subscriptions" element={<Subscriptions />} />
-          <Route path="pl" element={<PL />} />
+          <Route path="pl" element={<ProfitAndLoss />} />
           <Route path="balance-sheet" element={<BalanceSheet />} />
         </Route>
       </Routes>

@@ -1,14 +1,7 @@
-import React from 'react';
-import './PL.css';
+import { formatCurrency } from '../utils/formatters';
+import './ProfitAndLoss.css';
 
-const PL = () => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('nl-NL', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount);
-  };
-
+const ProfitAndLoss = () => {
   // Placeholder data
   const revenue = {
     total: 0,
@@ -83,4 +76,4 @@ const PL = () => {
   );
 };
 
-export default PL;
+export default ProfitAndLoss;

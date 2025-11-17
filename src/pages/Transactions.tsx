@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
-import { useTransactions, useSyncTransactions } from '../hooks/useTransactions';
-import type { Transaction } from '../hooks/useTransactions';
+import { useTransactions, useSyncTransactions } from '../features/transactions';
+import type { Transaction } from '../types';
+import { formatCurrencyAbs, formatDate } from '../utils/formatters';
+import { getAssignmentStatus, getTransactionCategory } from '../utils/status';
 import './Transactions.css';
 
 const Transactions = () => {
@@ -8,55 +10,12 @@ const Transactions = () => {
   const syncMutation = useSyncTransactions();
   const [selectedAccount, setSelectedAccount] = useState<string>('all');
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('nl-NL', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(Math.abs(amount));
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  };
-
   const handleSync = async () => {
     try {
       await syncMutation.mutateAsync({ count: 200 });
     } catch (error) {
       console.error('Failed to sync transactions:', error);
     }
-  };
-
-  const getCategory = (amount: number) => {
-    return amount >= 0 ? 'Income' : 'Expense';
-  };
-
-  const getStatus = (transaction: Transaction): 'assigned' | 'partially-assigned' | 'unassigned' => {
-    const amountAllocated = transaction.amountAllocated ?? 0;
-    const transactionAmount = Math.abs(transaction.amount);
-
-    // If amountAllocated is 0 or NaN, it's not linked
-    if (!amountAllocated || isNaN(amountAllocated)) {
-      return 'unassigned';
-    }
-
-    const absAmountAllocated = Math.abs(amountAllocated);
-
-    // If amountAllocated equals transaction amount, it's fully linked
-    if (absAmountAllocated === transactionAmount) {
-      return 'assigned';
-    }
-
-    // If amountAllocated is non-zero but less than transaction amount, it's partially linked
-    if (absAmountAllocated > 0 && absAmountAllocated < transactionAmount) {
-      return 'partially-assigned';
-    }
-
-    return 'unassigned';
   };
 
   // Get unique account IDs
@@ -138,8 +97,8 @@ const Transactions = () => {
           <tbody>
             {filteredTransactions && filteredTransactions.length > 0 ? (
               filteredTransactions.map((transaction: Transaction) => {
-                const category = getCategory(transaction.amount);
-                const status = getStatus(transaction);
+                const category = getTransactionCategory(transaction.amount);
+                const status = getAssignmentStatus(transaction.amountAllocated, transaction.amount);
 
                 return (
                   <tr key={transaction.uuid}>
@@ -152,7 +111,7 @@ const Transactions = () => {
                       </span>
                     </td>
                     <td className={transaction.amount < 0 ? 'amount-negative' : 'amount-positive'}>
-                      {transaction.amount < 0 ? '-' : '+'}{formatCurrency(transaction.amount)}
+                      {transaction.amount < 0 ? '-' : '+'}{formatCurrencyAbs(transaction.amount)}
                     </td>
                     <td>
                       <span className={`status-badge status-${status}`}>

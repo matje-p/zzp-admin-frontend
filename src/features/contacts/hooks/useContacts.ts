@@ -1,26 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../lib/api';
-
-export interface Contact {
-  uuid: string;
-  name: string;
-  email: string | null;
-  phone: string | null;
-  address: string | null;
-  vatNumber: string | null;
-  type: string;
-  isActive: boolean;
-  notes: string | null;
-  purchaseInvoiceCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Backend response type
-interface ContactsResponse {
-  total: number;
-  contacts: Contact[];
-}
+import { apiClient } from '../../../lib/api';
+import type { Contact, ContactsResponse } from '../../../types';
 
 // Fetch all contacts
 export const useContacts = () => {

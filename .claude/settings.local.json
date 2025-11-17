@@ -39,7 +39,11 @@
       "Bash(xargs cat:*)",
       "Bash(git rm:*)",
       "Bash(npx prisma migrate:*)",
-      "Bash(npx prisma db push)"
+      "Bash(npx prisma db push)",
+      "Bash(tree:*)",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

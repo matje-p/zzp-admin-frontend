@@ -1,27 +1,12 @@
-import React, { useState } from 'react';
-import { useSalesInvoices } from '../hooks/useSalesInvoices';
-import SalesInvoiceForm from '../components/SalesInvoiceForm';
-import type { SalesInvoice } from '../hooks/useSalesInvoices';
-import './OutboundInvoices.css';
+import { useState } from 'react';
+import { useSalesInvoices, SalesInvoiceForm } from '../features/sales-invoices';
+import type { SalesInvoice } from '../features/sales-invoices/hooks/useSalesInvoices';
+import { formatCurrency, formatDate } from '../utils/formatters';
+import './SalesInvoices.css';
 
-const OutboundInvoices = () => {
+const SalesInvoices = () => {
   const { data: invoices, isLoading, error } = useSalesInvoices();
   const [isFormOpen, setIsFormOpen] = useState(false);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('nl-NL', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  };
 
   const getStatusClass = (status: string) => {
     switch (status) {
@@ -114,4 +99,4 @@ const OutboundInvoices = () => {
   );
 };
 
-export default OutboundInvoices;
+export default SalesInvoices;

@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { CheckSquare, Landmark, FileText, Send, BookUser, CalendarClock, TrendingUp, Scale } from 'lucide-react';
 import TopNav from './TopNav';
-import { getForMeTodosCount } from '../pages/Todos';
+import { getForMeTodosCount } from '../../pages/Todos';
 import './Layout.css';
 
 const Layout = () => {
@@ -42,7 +42,7 @@ const Layout = () => {
     },
     {
       path: '/pl',
-      label: 'P&L',
+      label: 'Profit & Loss',
       icon: <TrendingUp size={20} />
     },
     {

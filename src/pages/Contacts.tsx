@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useContacts } from '../hooks/useContacts';
-import type { Contact } from '../hooks/useContacts';
+import { useContacts } from '../features/contacts';
+import type { Contact } from '../types';
+import { formatDate } from '../utils/formatters';
 import './Contacts.css';
 
 const Contacts = () => {
@@ -9,14 +10,6 @@ const Contacts = () => {
 
   const toggleExpand = (contactId: string) => {
     setExpandedContactId(expandedContactId === contactId ? null : contactId);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
   };
 
   if (isLoading) {
@@ -48,7 +41,7 @@ const Contacts = () => {
         <div className="header-actions">
           <button
             className="btn-primary"
-            onClick={refetch}
+            onClick={() => refetch()}
             disabled={isLoading}
           >
             {isLoading ? 'Loading...' : 'Refresh Contacts'}

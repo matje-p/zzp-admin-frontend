@@ -1,36 +1,61 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { Trash2 } from "lucide-react";
-import { usePurchaseInvoices, useDeletePurchaseInvoice } from "../hooks/usePurchaseInvoices";
-import type { PurchaseInvoice, PurchaseInvoiceLine } from "../hooks/usePurchaseInvoices";
+import {
+  usePurchaseInvoices,
+  useDeletePurchaseInvoice,
+  useContacts,
+  useExpenseAccounts,
+  useFileUpload,
+  useInvoiceModal,
+  FileUploadDropzone,
+  InvoiceDetailModal,
+  DeleteConfirmModal,
+  UnsavedChangesModal,
+  getPaymentStatus,
+} from "../features/purchase-invoices";
+import type { PurchaseInvoice } from "../types";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+import { formatCurrency, formatDate, formatPeriod, truncateDescription } from "../utils/formatters";
 import "./PurchaseInvoices.css";
-
-interface ProcessingStatus {
-  processingId: string;
-  step: number;
-  totalSteps: number;
-  stepName: string;
-  message: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'error';
-  data?: any;
-  error?: string;
-}
-
 
 const PurchaseInvoices = () => {
   const { data: invoices, isLoading, error, refetch } = usePurchaseInvoices();
+  const { data: contacts } = useContacts();
+  const { data: expenseAccounts } = useExpenseAccounts();
   const deleteInvoiceMutation = useDeletePurchaseInvoice();
-  const [isDragging, setIsDragging] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState<PurchaseInvoice | null>(null);
-  const [uploadStatus, setUploadStatus] = useState<
-    "idle" | "uploading" | "success" | "error"
-  >("idle");
-  const [uploadMessage, setUploadMessage] = useState<string>("");
-  const [processingStatus, setProcessingStatus] = useState<ProcessingStatus | null>(null);
+
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
 
+  // File upload hook
+  const {
+    isDragging,
+    uploadStatus,
+    uploadMessage,
+    processingStatus,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    handleFileInputChange,
+  } = useFileUpload(refetch);
+
+  // Invoice modal hook
+  const {
+    selectedInvoice,
+    isCreatingInvoice,
+    unsavedChangesModalOpen,
+    handleOpenInvoice,
+    handleCreateInvoice,
+    handleCloseDetailModal,
+    handleInvoiceChange,
+    handleAddLineClick,
+    handleLineItemChange,
+    handleSaveInvoice,
+    handleUnsavedChangesConfirm,
+    handleUnsavedChangesCancel,
+  } = useInvoiceModal(refetch);
+
+  // Delete modal handlers
   const handleDeleteConfirm = useCallback(async () => {
     if (invoiceToDelete) {
       try {
@@ -48,294 +73,23 @@ const PurchaseInvoices = () => {
     setInvoiceToDelete(null);
   }, []);
 
-  // Cleanup SSE connection on unmount
-  useEffect(() => {
-    return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
-    };
-  }, []);
-
-  // Handle keyboard events for all modals
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        // Close detail modal if open
-        if (selectedInvoice) {
-          handleCloseDetailModal();
-        }
-        // Close delete modal if open
-        if (deleteModalOpen) {
-          handleDeleteCancel();
-        }
-      } else if (e.key === "Enter" && deleteModalOpen) {
-        e.preventDefault();
-        handleDeleteConfirm();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [deleteModalOpen, selectedInvoice, handleDeleteConfirm, handleDeleteCancel]);
-
-  const handleRowClick = (invoice: PurchaseInvoice) => {
-    setSelectedInvoice(invoice);
-
-    // Log when PDF endpoint will be called
-    if (invoice.documentUuid) {
-      const pdfUrl = `${import.meta.env.VITE_API_URL}/api/purchase-invoice/${invoice.purchaseInvoiceUploadUuid}/document`;
-      console.log('📄 Loading PDF from endpoint:', pdfUrl);
-    }
-  };
-
-  const handleCloseDetailModal = () => {
-    setSelectedInvoice(null);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const files = Array.from(e.dataTransfer.files);
-
-    if (files.length > 0) {
-      // Check if all files are PDFs, PNGs, or JPGs
-      const allowedTypes = ["application/pdf", "image/png", "image/jpeg", "image/jpg"];
-      const invalidFiles = files.filter(file => !allowedTypes.includes(file.type));
-      if (invalidFiles.length > 0) {
-        setUploadStatus("error");
-        setUploadMessage("Please upload only PDF, PNG, or JPG files");
-        setTimeout(() => setUploadStatus("idle"), 3000);
-        return;
-      }
-
-      await uploadFiles(files);
-    }
-  };
-
-  const connectToSSE = (processingId: string) => {
-    const eventSource = new EventSource(
-      `${import.meta.env.VITE_API_URL}/api/upload/stream/${processingId}`
-    );
-
-    eventSourceRef.current = eventSource;
-
-    eventSource.onmessage = (event) => {
-      const status: ProcessingStatus = JSON.parse(event.data);
-      console.log('Processing status:', status);
-
-      setProcessingStatus(status);
-      setUploadMessage(status.message);
-
-      // Handle completion
-      if (status.status === 'completed') {
-        setUploadStatus("success");
-        setUploadMessage("Invoice processed successfully!");
-        eventSource.close();
-        eventSourceRef.current = null;
-        setTimeout(() => {
-          setProcessingStatus(null);
-          refetch();
-          setUploadStatus("idle");
-        }, 2000);
-      }
-
-      // Handle error
-      if (status.status === 'error') {
-        setUploadStatus("error");
-        setUploadMessage(status.error || "Processing failed");
-        setTimeout(() => {
-          eventSource.close();
-          eventSourceRef.current = null;
-          setProcessingStatus(null);
-          setUploadStatus("idle");
-        }, 3000);
-      }
-    };
-
-    eventSource.onerror = (error) => {
-      console.error('SSE error:', error);
-
-      // If already closed or completed, ignore the error (normal closure)
-      if (eventSource.readyState === EventSource.CLOSED) {
-        console.log('SSE connection closed normally');
-        return;
-      }
-
-      // Only handle actual errors
-      eventSource.close();
-      eventSourceRef.current = null;
-      setUploadStatus("error");
-      setUploadMessage("Connection error during processing");
-      setTimeout(() => {
-        setProcessingStatus(null);
-        setUploadStatus("idle");
-      }, 3000);
-    };
-  };
-
-  const uploadFiles = async (files: File[]) => {
-    setUploadStatus("uploading");
-    setProcessingStatus(null);
-    const fileCount = files.length;
-    setUploadMessage(`Uploading ${fileCount} invoice${fileCount > 1 ? 's' : ''}...`);
-
-    try {
-      const formData = new FormData();
-      files.forEach((file) => {
-        formData.append("files", file);
-      });
-
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/upload?process=true`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Upload failed");
-      }
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Upload failed');
-      }
-
-      const processingId = data.data.processingId;
-
-      if (!processingId) {
-        throw new Error('No processing ID returned');
-      }
-
-      console.log('Upload successful, connecting to SSE...');
-
-      // Connect to SSE for real-time updates
-      connectToSSE(processingId);
-
-    } catch (err) {
-      setUploadStatus("error");
-      setUploadMessage(err instanceof Error ? err.message : "Failed to upload invoices");
-      setTimeout(() => setUploadStatus("idle"), 3000);
-    }
-  };
-
-  const handleDropzoneClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const fileList = e.target.files;
-    if (fileList && fileList.length > 0) {
-      const files = Array.from(fileList);
-
-      // Check if all files are PDFs, PNGs, or JPGs
-      const allowedTypes = ["application/pdf", "image/png", "image/jpeg", "image/jpg"];
-      const invalidFiles = files.filter(file => !allowedTypes.includes(file.type));
-      if (invalidFiles.length > 0) {
-        setUploadStatus("error");
-        setUploadMessage("Please upload only PDF, PNG, or JPG files");
-        setTimeout(() => setUploadStatus("idle"), 3000);
-        return;
-      }
-
-      await uploadFiles(files);
-    }
-    // Reset the input so the same files can be selected again
-    e.target.value = "";
-  };
-
   const handleDeleteClick = (e: React.MouseEvent, invoiceId: string) => {
     e.stopPropagation(); // Prevent row expansion
     setInvoiceToDelete(invoiceId);
     setDeleteModalOpen(true);
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("nl-NL", {
-      style: "currency",
-      currency: "EUR",
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  };
-
-  const getPaymentStatus = (invoice: PurchaseInvoice): 'linked' | 'partially-linked' | 'unlinked' => {
-    const amountAllocated = invoice.amountAllocated ?? 0;
-    const invoiceAmount = Math.abs(invoice.amount);
-
-    // If amountAllocated is 0 or NaN, it's not linked
-    if (!amountAllocated || isNaN(amountAllocated)) {
-      return 'unlinked';
-    }
-
-    const absAmountAllocated = Math.abs(amountAllocated);
-
-    // If amountAllocated equals invoice amount, it's fully linked
-    if (absAmountAllocated === invoiceAmount) {
-      return 'linked';
-    }
-
-    // If amountAllocated is non-zero but less than invoice amount, it's partially linked
-    if (absAmountAllocated > 0 && absAmountAllocated < invoiceAmount) {
-      return 'partially-linked';
-    }
-
-    return 'unlinked';
-  };
-
-  const formatPeriod = (startDate: string | null, endDate: string | null): string => {
-    if (!startDate || !endDate) {
-      return '-';
-    }
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    const startDay = start.getDate();
-    const startMonth = start.toLocaleString('en-US', { month: 'short' });
-    const endDay = end.getDate();
-    const endMonth = end.toLocaleString('en-US', { month: 'short' });
-    const endYear = end.getFullYear();
-
-    // Format: "5 Jul to 5 Aug 2025"
-    if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
-      // Same month and year: "5 to 15 Jul 2025"
-      return `${startDay} to ${endDay} ${endMonth} ${endYear}`;
-    } else if (start.getFullYear() === end.getFullYear()) {
-      // Same year but different months: "5 Jul to 5 Aug 2025"
-      return `${startDay} ${startMonth} to ${endDay} ${endMonth} ${endYear}`;
-    } else {
-      // Different years: "5 Jul 2024 to 5 Aug 2025"
-      const startYear = start.getFullYear();
-      return `${startDay} ${startMonth} ${startYear} to ${endDay} ${endMonth} ${endYear}`;
-    }
-  };
-
-  const truncateDescription = (description: string | null, maxLength: number = 40): string => {
-    if (!description) return '-';
-    if (description.length <= maxLength) return description;
-    return description.substring(0, maxLength) + '...';
-  };
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    deleteModalOpen,
+    unsavedChangesModalOpen,
+    selectedInvoice,
+    handleDeleteConfirm,
+    handleDeleteCancel,
+    handleCloseDetailModal,
+    handleUnsavedChangesConfirm,
+    handleUnsavedChangesCancel,
+  });
 
   if (isLoading) {
     return (
@@ -365,58 +119,21 @@ const PurchaseInvoices = () => {
     <div className="purchase-invoices-page">
       <div className="page-header">
         <h1>Purchase invoices</h1>
+        <button className="btn-primary" onClick={handleCreateInvoice}>
+          Add Purchase Invoice
+        </button>
       </div>
 
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileInputChange}
-        accept="application/pdf,image/png,image/jpeg,image/jpg"
-        multiple
-        style={{ display: "none" }}
-      />
-
-      <div
-        className={`invoice-dropzone ${isDragging ? "dragging" : ""}`}
+      <FileUploadDropzone
+        isDragging={isDragging}
+        uploadStatus={uploadStatus}
+        uploadMessage={uploadMessage}
+        processingStatus={processingStatus}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={handleDropzoneClick}
-      >
-        <svg
-          className="paperclip-icon"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-        </svg>
-        <span className="dropzone-text">
-          {uploadStatus === "uploading"
-            ? "Uploading..."
-            : "Click or drag invoice(s) here"}
-        </span>
-      </div>
-
-      {uploadStatus !== "idle" && uploadStatus !== "uploading" && (
-        <div className={`upload-message upload-${uploadStatus}`}>
-          {uploadMessage}
-        </div>
-      )}
-
-      {processingStatus && uploadStatus === "uploading" && (
-        <div className="processing-status-container">
-          <div className="processing-spinner"></div>
-          <div className="processing-step-message-current">
-            {processingStatus.message}
-          </div>
-        </div>
-      )}
+        onFileInputChange={handleFileInputChange}
+      />
 
       <div className="purchase-invoices-table-container">
         <table className="purchase-invoices-table">
@@ -439,20 +156,26 @@ const PurchaseInvoices = () => {
               invoices.map((invoice: PurchaseInvoice) => (
                 <tr
                   key={invoice.purchaseInvoiceUploadUuid}
-                  onClick={() => handleRowClick(invoice)}
+                  onClick={() => handleOpenInvoice(invoice)}
                   className="clickable-row"
                 >
                   <td>
                     <div>
                       {formatDate(invoice.invoiceSentDate)}
                       {!invoice.filePath && (
-                        <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>
+                        <div
+                          style={{
+                            fontSize: "11px",
+                            color: "#6b7280",
+                            marginTop: "2px",
+                          }}
+                        >
                           (expected)
                         </div>
                       )}
                     </div>
                   </td>
-                  <td>{invoice.contactName || "-"}</td>
+                  <td>{invoice.contact?.name || invoice.contactName || "-"}</td>
                   <td>{truncateDescription(invoice.description)}</td>
                   <td>{invoice.category || "-"}</td>
                   <td className="amount-positive">
@@ -460,30 +183,43 @@ const PurchaseInvoices = () => {
                   </td>
                   <td className="type-cell">
                     <span className="subscription-badge">
-                      {invoice.subscriptionUuid ? 'Subscription' : 'One-off'}
-                    </span>
-                  </td>
-                  <td>{formatPeriod(invoice.periodStartDate, invoice.periodEndDate)}</td>
-                  <td>
-                    <span
-                      className={`status-badge ${invoice.filePath ? 'status-uploaded' : 'status-expected'}`}
-                    >
-                      {invoice.filePath ? 'Uploaded' : 'Not uploaded'}
+                      {invoice.subscriptionUuid ? "Subscription" : "One-off"}
                     </span>
                   </td>
                   <td>
+                    {formatPeriod(
+                      invoice.periodStartDate,
+                      invoice.periodEndDate
+                    )}
+                  </td>
+                  <td>
                     <span
-                      className={`status-badge status-${getPaymentStatus(invoice)}`}
+                      className={`status-badge ${
+                        invoice.filePath ? "status-uploaded" : "status-expected"
+                      }`}
                     >
-                      {getPaymentStatus(invoice) === 'linked' ? 'Linked' :
-                       getPaymentStatus(invoice) === 'partially-linked' ? 'Partially Linked' :
-                       'Not Linked'}
+                      {invoice.filePath ? "Uploaded" : "Not uploaded"}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      className={`status-badge status-${getPaymentStatus(
+                        invoice
+                      )}`}
+                    >
+                      {getPaymentStatus(invoice) === "linked"
+                        ? "Linked"
+                        : getPaymentStatus(invoice) === "partially-linked"
+                        ? "Partially Linked"
+                        : "Not Linked"}
                     </span>
                   </td>
                   <td>
                     <button
                       className="delete-button"
-                      onClick={(e) => handleDeleteClick(e, invoice.purchaseInvoiceUploadUuid)}
+                      onClick={(e) =>
+                        handleDeleteClick(e, invoice.purchaseInvoiceUploadUuid)
+                      }
                       title="Delete invoice"
                     >
                       <Trash2 size={16} />
@@ -505,159 +241,30 @@ const PurchaseInvoices = () => {
         </table>
       </div>
 
-      {deleteModalOpen && (
-        <div className="modal-overlay" onClick={handleDeleteCancel}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Delete Invoice</h2>
-            <p>Are you sure you want to delete this invoice?</p>
-            <div className="modal-actions">
-              <button className="btn-cancel" onClick={handleDeleteCancel}>
-                Cancel
-              </button>
-              <button
-                className="btn-delete"
-                onClick={handleDeleteConfirm}
-                disabled={deleteInvoiceMutation.isPending}
-              >
-                {deleteInvoiceMutation.isPending ? "Deleting..." : "Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmModal
+        isOpen={deleteModalOpen}
+        isDeleting={deleteInvoiceMutation.isPending}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+      />
 
-      {selectedInvoice && (
-        <div className="modal-overlay" onClick={handleCloseDetailModal}>
-          <div className="modal-content invoice-detail-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Invoice Details</h2>
-              <button className="modal-close" onClick={handleCloseDetailModal}>&times;</button>
-            </div>
-            <div className="invoice-detail-content">
-              <div className="invoice-detail-left">
-                {/* Top Section - Key Information */}
-                <div className="invoice-detail-top">
-                  <div className="detail-field">
-                    <span className="field-label">Contact</span>
-                    <span className="field-value">{selectedInvoice.contactName || "-"}</span>
-                  </div>
-                  <div className="detail-field">
-                    <span className="field-label">Description</span>
-                    <span className="field-value">{selectedInvoice.description || "-"}</span>
-                  </div>
-                  <div className="detail-field">
-                    <span className="field-label">Invoice Date</span>
-                    <span className="field-value">{formatDate(selectedInvoice.invoiceSentDate)}</span>
-                  </div>
-                  <div className="detail-field">
-                    <span className="field-label">Period</span>
-                    <span className="field-value">{formatPeriod(selectedInvoice.periodStartDate, selectedInvoice.periodEndDate)}</span>
-                  </div>
-                  <div className="detail-field">
-                    <span className="field-label">Subscription</span>
-                    <span className="field-value">
-                      <span className="subscription-badge">
-                        {selectedInvoice.subscriptionUuid ? 'Subscription' : 'One-off'}
-                      </span>
-                    </span>
-                  </div>
-                </div>
+      <InvoiceDetailModal
+        invoice={selectedInvoice}
+        isCreating={isCreatingInvoice}
+        contacts={contacts}
+        expenseAccounts={expenseAccounts}
+        onClose={handleCloseDetailModal}
+        onSave={handleSaveInvoice}
+        onInvoiceChange={handleInvoiceChange}
+        onLineItemChange={handleLineItemChange}
+        onAddLine={handleAddLineClick}
+      />
 
-                {/* Bottom Section - Invoice Lines */}
-                <div className="invoice-detail-bottom">
-                  <div className="invoice-lines-header">
-                    <h3>Invoice Lines</h3>
-                    <button className="btn-add-line">Add line</button>
-                  </div>
-                  <table className="invoice-lines-table">
-                    <thead>
-                      <tr>
-                        <th>Quantity</th>
-                        <th>Description</th>
-                        <th>Amount</th>
-                        <th>VAT</th>
-                        <th>Category</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedInvoice.lines && selectedInvoice.lines.length > 0 ? (
-                        selectedInvoice.lines.map((line) => (
-                          <tr key={line.uuid}>
-                            <td>{line.quantity}</td>
-                            <td>{line.description || "-"}</td>
-                            <td className="amount-cell">{formatCurrency(line.amountExclVat)}</td>
-                            <td>{line.vatPercentage ? `${line.vatPercentage}%` : "-"}</td>
-                            <td>{line.category || "-"}</td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={5} className="no-lines-message">
-                            No invoice lines available
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                    <tfoot>
-                      <tr className="total-row">
-                        <td colSpan={2}>Total</td>
-                        <td className="amount-cell">{formatCurrency(selectedInvoice.amount)}</td>
-                        <td colSpan={2}></td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              </div>
-              <div className="invoice-detail-right">
-              {(() => {
-                  console.log('🔍 Checking filePath:', selectedInvoice.filePath);
-                  console.log('🔍 Checking filename:', selectedInvoice.filename);
-                  console.log('🔍 Invoice UUID:', selectedInvoice.purchaseInvoiceUploadUuid);
-                  console.log('🔍 VITE_API_URL:', import.meta.env.VITE_API_URL);
-
-                  const hasDocument = selectedInvoice.filePath || selectedInvoice.filename;
-
-                  if (hasDocument) {
-                    const pdfUrl = `${import.meta.env.VITE_API_URL}/api/purchase-invoice/${selectedInvoice.purchaseInvoiceUploadUuid}/document`;
-                    console.log('📄 RENDERING IFRAME with URL:', pdfUrl);
-                    return (
-                      <div className="pdf-viewer-container">
-                        <iframe
-                          src={pdfUrl}
-                          className="pdf-viewer"
-                          title="Invoice PDF"
-                          onLoad={() => {
-                            console.log('✅ PDF iframe onLoad fired');
-                          }}
-                          onError={() => {
-                            console.error('❌ PDF iframe onError fired');
-                          }}
-                        />
-                      </div>
-                    );
-                  } else {
-                    console.log('⚠️ No document file - showing placeholder');
-                    return (
-                      <div className="pdf-preview-container">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                          <polyline points="14 2 14 8 20 8"></polyline>
-                          <line x1="16" y1="13" x2="8" y2="13"></line>
-                          <line x1="16" y1="17" x2="8" y2="17"></line>
-                          <polyline points="10 9 9 9 8 9"></polyline>
-                        </svg>
-                        <div className="pdf-preview-text">
-                          No document uploaded
-                        </div>
-                      </div>
-                    );
-                  }
-                })()}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <UnsavedChangesModal
+        isOpen={unsavedChangesModalOpen}
+        onConfirm={handleUnsavedChangesConfirm}
+        onCancel={handleUnsavedChangesCancel}
+      />
     </div>
   );
 };
