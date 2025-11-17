@@ -28,6 +28,14 @@ export type {
   Subscription,
 } from './subscription';
 
+// Accounting types
+export type {
+  ProfitAndLossLineItem,
+  ProfitAndLossSection,
+  ProfitAndLossData,
+  ProfitAndLossResult,
+} from './accounting';
+
 // Shared types (Account is used across multiple domains)
 export type {
   Account,

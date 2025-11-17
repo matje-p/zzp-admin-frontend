@@ -1,19 +1,57 @@
-import { formatCurrency } from '../utils/formatters';
+/**
+ * Profit & Loss Page
+ *
+ * Responsibilities:
+ * - Maps URL to screen
+ * - Composes feature components
+ * - Handles page-level layout
+ *
+ * Does NOT:
+ * - Contain business logic
+ * - Make API calls directly
+ * - Have complex state management
+ * - Include domain calculations
+ */
+
+import { useProfitAndLoss, ProfitAndLossReport } from '../features/accounting';
 import './ProfitAndLoss.css';
 
 const ProfitAndLoss = () => {
-  // Placeholder data
-  const revenue = {
-    total: 0,
-    items: []
-  };
+  // Fetch P&L data using feature hook
+  const { data: profitAndLossData, isLoading, error } = useProfitAndLoss();
 
-  const costs = {
-    total: 0,
-    items: []
-  };
+  if (isLoading) {
+    return (
+      <div className="pl-page">
+        <div className="page-header">
+          <h1>Profit & Loss</h1>
+        </div>
+        <p>Loading profit and loss data...</p>
+      </div>
+    );
+  }
 
-  const result = revenue.total - costs.total;
+  if (error) {
+    return (
+      <div className="pl-page">
+        <div className="page-header">
+          <h1>Profit & Loss</h1>
+        </div>
+        <p className="error-message">Error loading data: {(error as Error).message}</p>
+      </div>
+    );
+  }
+
+  if (!profitAndLossData) {
+    return (
+      <div className="pl-page">
+        <div className="page-header">
+          <h1>Profit & Loss</h1>
+        </div>
+        <p>No data available</p>
+      </div>
+    );
+  }
 
   return (
     <div className="pl-page">
@@ -21,57 +59,8 @@ const ProfitAndLoss = () => {
         <h1>Profit & Loss</h1>
       </div>
 
-      <div className="pl-content">
-        {/* Revenue Section */}
-        <div className="pl-section">
-          <div className="section-header">
-            <h2>Revenue</h2>
-            <div className="section-total positive">{formatCurrency(revenue.total)}</div>
-          </div>
-          {revenue.items.length === 0 ? (
-            <div className="empty-state">No revenue data available</div>
-          ) : (
-            <div className="pl-items">
-              {revenue.items.map((item: any, index: number) => (
-                <div key={index} className="pl-item">
-                  <span className="item-name">{item.name}</span>
-                  <span className="item-amount">{formatCurrency(item.amount)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Costs Section */}
-        <div className="pl-section">
-          <div className="section-header">
-            <h2>Costs</h2>
-            <div className="section-total negative">{formatCurrency(costs.total)}</div>
-          </div>
-          {costs.items.length === 0 ? (
-            <div className="empty-state">No cost data available</div>
-          ) : (
-            <div className="pl-items">
-              {costs.items.map((item: any, index: number) => (
-                <div key={index} className="pl-item">
-                  <span className="item-name">{item.name}</span>
-                  <span className="item-amount">{formatCurrency(item.amount)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Result Section */}
-        <div className="pl-section result-section">
-          <div className="section-header">
-            <h2>Result</h2>
-            <div className={`section-total ${result >= 0 ? 'positive' : 'negative'}`}>
-              {formatCurrency(result)}
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Feature component handles all P&L rendering logic */}
+      <ProfitAndLossReport data={profitAndLossData} />
     </div>
   );
 };
