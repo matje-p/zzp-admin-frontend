@@ -5,6 +5,7 @@
 
 // Hooks
 export * from './hooks/useTransactions';
+export * from './hooks/usePaymentMatching';
 
 // Components
 export * from './components/TransactionsTable';

@@ -90,3 +90,49 @@ export const useSyncTransactions = () => {
     },
   });
 };
+
+// Link transaction to invoice
+export const useLinkTransactionToInvoice = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ transactionId, invoiceUuid, amount }: {
+      transactionId: string;
+      invoiceUuid: string;
+      amount?: number;
+    }) => {
+      const { data } = await apiClient.put(
+        `/api/transactions/${transactionId}/link-invoice`,
+        { invoiceUuid, amount }
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-matching'] });
+    },
+  });
+};
+
+// Link transaction to account
+export const useLinkTransactionToAccount = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ transactionId, accountUuid, amount }: {
+      transactionId: string;
+      accountUuid: string;
+      amount?: number;
+    }) => {
+      const { data } = await apiClient.put(
+        `/api/transactions/${transactionId}/link-account`,
+        { accountUuid, amount }
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-matching'] });
+    },
+  });
+};

@@ -21,7 +21,7 @@ export const InvoiceLineRow: React.FC<InvoiceLineRowProps> = ({
       <td>
         <input
           type="number"
-          className="line-input"
+          className="form-input-compact line-input"
           value={line.quantity ?? ""}
           onChange={(e) =>
             onLineItemChange(
@@ -40,7 +40,7 @@ export const InvoiceLineRow: React.FC<InvoiceLineRowProps> = ({
       <td>
         <input
           type="text"
-          className="line-input"
+          className="form-input-compact line-input"
           value={line.description || ""}
           onChange={(e) =>
             onLineItemChange(line.uuid, "description", e.target.value)
@@ -54,7 +54,7 @@ export const InvoiceLineRow: React.FC<InvoiceLineRowProps> = ({
       <td>
         <input
           type="number"
-          className="line-input amount-input"
+          className="form-input-compact line-input amount-input"
           value={line.amountExclVat ?? ""}
           onChange={(e) =>
             onLineItemChange(
@@ -80,7 +80,7 @@ export const InvoiceLineRow: React.FC<InvoiceLineRowProps> = ({
         >
           <input
             type="number"
-            className="line-input vat-input"
+            className="form-input-compact line-input vat-input"
             value={line.vatPercentage ?? ""}
             onChange={(e) =>
               onLineItemChange(
@@ -101,7 +101,7 @@ export const InvoiceLineRow: React.FC<InvoiceLineRowProps> = ({
       </td>
       <td>
         <select
-          className="line-input"
+          className="form-select-compact line-input"
           value={line.category || ""}
           onChange={(e) =>
             onLineItemChange(line.uuid, "category", e.target.value)

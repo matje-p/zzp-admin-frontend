@@ -22,7 +22,7 @@ export const InvoiceHeaderForm: React.FC<InvoiceHeaderFormProps> = ({
       <div className="detail-field">
         <span className="field-label">Contact</span>
         <select
-          className="field-input"
+          className="form-select field-input"
           value={invoice.contactUuid || ""}
           onChange={(e) => {
             const contactUuid = e.target.value;
@@ -49,7 +49,7 @@ export const InvoiceHeaderForm: React.FC<InvoiceHeaderFormProps> = ({
         <div className="detail-field">
           <span className="field-label">Subscription</span>
           <select
-            className="field-input"
+            className="form-select field-input"
             value={invoice.subscriptionUuid || ""}
             onChange={(e) => {
               const subscriptionUuid = e.target.value;
@@ -77,7 +77,7 @@ export const InvoiceHeaderForm: React.FC<InvoiceHeaderFormProps> = ({
           <span className="field-label">Description</span>
           <input
             type="text"
-            className="field-input"
+            className="form-input field-input"
             value={invoice.description || ""}
             onChange={(e) => onInvoiceChange({ description: e.target.value })}
             onKeyDown={(e) => {
@@ -92,7 +92,7 @@ export const InvoiceHeaderForm: React.FC<InvoiceHeaderFormProps> = ({
         <span className="field-label">Invoice Date</span>
         <input
           type="date"
-          className="field-input"
+          className="form-input field-input"
           value={
             invoice.invoiceSentDate ? invoice.invoiceSentDate.split("T")[0] : ""
           }
@@ -113,7 +113,7 @@ export const InvoiceHeaderForm: React.FC<InvoiceHeaderFormProps> = ({
             <span className="field-label">Period Start</span>
             <input
               type="date"
-              className="field-input"
+              className="form-input field-input"
               value={
                 invoice.periodStartDate
                   ? invoice.periodStartDate.split("T")[0]
@@ -135,7 +135,7 @@ export const InvoiceHeaderForm: React.FC<InvoiceHeaderFormProps> = ({
             <span className="field-label">Period End</span>
             <input
               type="date"
-              className="field-input"
+              className="form-input field-input"
               value={
                 invoice.periodEndDate ? invoice.periodEndDate.split("T")[0] : ""
               }
