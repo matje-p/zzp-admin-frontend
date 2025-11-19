@@ -161,11 +161,6 @@
 
 .transactions-table tbody tr {
   border-bottom: 1px solid #e5e7eb;
-  transition: background-color 0.2s;
-}
-
-.transactions-table tbody tr:hover {
-  background-color: #f9fafb;
 }
 
 .transactions-table tbody tr:last-child {
@@ -269,4 +264,215 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 8px 4px 4px 4px;
+}
+
+/* Link To cell wrapper */
+.link-to-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Allocations list styles */
+.allocations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.allocation-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background-color: #f3f4f6;
+  border-radius: 4px;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.allocation-item:hover {
+  background-color: #e5e7eb;
+}
+
+.allocation-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.allocation-account {
+  color: #1f2937;
+  font-weight: 500;
+  flex: 1;
+}
+
+.allocation-invoice {
+  color: #1f2937;
+  font-weight: 500;
+  flex: 1;
+  font-style: italic;
+}
+
+.allocation-unknown {
+  color: #9ca3af;
+  flex: 1;
+}
+
+.allocation-amount {
+  color: #059669;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+}
+
+.allocation-amount-clickable {
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.allocation-amount-clickable:hover {
+  background-color: #d1fae5;
+}
+
+.allocation-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.allocation-edit-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  margin: 0;
+  transition: color 0.2s, background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+}
+
+.allocation-edit-btn:hover:not(:disabled) {
+  color: #2563eb;
+  background-color: #dbeafe;
+}
+
+.allocation-edit-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.allocation-edit-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.allocation-delete-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  margin: 0;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+}
+
+.allocation-delete-btn:hover:not(:disabled) {
+  color: #dc2626;
+  background-color: #fee2e2;
+}
+
+.allocation-delete-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.allocation-delete-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.allocation-amount-input {
+  width: 80px;
+  padding: 2px 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  color: #1f2937;
+  background-color: white;
+}
+
+.allocation-amount-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.no-allocations {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+/* Remainder amount styles */
+.remainder-amount {
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+.remainder-zero {
+  color: #6b7280;
+}
+
+.remainder-unallocated {
+  color: #dc2626;
+}
+
+.remainder-overallocated {
+  color: #059669;
+}
+
+/* Add allocation button */
+.btn-add-allocation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background-color: #f3f4f6;
+  border: none;
+  border-radius: 4px;
+  font-size: 18px;
+  font-weight: 400;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  width: 28px;
+  height: 28px;
+}
+
+.btn-add-allocation:hover {
+  background-color: #e5e7eb;
+  color: #2563eb;
+}
+
+.btn-add-allocation:active {
+  transform: scale(0.98);
 }

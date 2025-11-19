@@ -136,3 +136,43 @@ export const useLinkTransactionToAccount = () => {
     },
   });
 };
+
+// Delete payment allocation
+export const useDeleteAllocation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (allocationUuid: string) => {
+      const { data } = await apiClient.delete(
+        `/api/transactions/allocations/${allocationUuid}`
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-matching'] });
+    },
+  });
+};
+
+// Update payment allocation
+export const useUpdateAllocation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ allocationUuid, amount }: {
+      allocationUuid: string;
+      amount: number;
+    }) => {
+      const { data } = await apiClient.patch(
+        `/api/transactions/allocations/${allocationUuid}`,
+        { amount }
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-matching'] });
+    },
+  });
+};

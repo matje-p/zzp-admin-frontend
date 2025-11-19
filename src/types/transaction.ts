@@ -2,6 +2,26 @@
  * Transaction-related type definitions
  */
 
+export interface PaymentAllocation {
+  uuid: string;
+  bankTransactionUuid: string;
+  invoiceUuid: string | null;
+  accountUuid: string | null;
+  amount: string;
+  createdAt: string;
+  updatedAt: string;
+  invoice: {
+    purchaseInvoiceUploadUuid: string;
+    description: string;
+  } | null;
+  account: {
+    uuid: string;
+    code: string;
+    name: string;
+    type: string;
+  } | null;
+}
+
 export interface Transaction {
   uuid: string;
   transactionId: string;
@@ -17,6 +37,7 @@ export interface Transaction {
   category: string | null;
   invoiceUuid: string | null;
   amountAllocated?: number;
+  paymentAllocations?: PaymentAllocation[];
 }
 
 export interface SyncTransactionsResponse {
