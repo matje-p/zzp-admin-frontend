@@ -2,9 +2,11 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useTransactions, useSyncTransactions, useLinkTransactionToInvoice, useLinkTransactionToAccount, useDeleteAllocation, useUpdateAllocation } from '../hooks/useTransactions';
 import { useExpenseMatching, useIncomeMatching } from '../hooks/usePaymentMatching';
 import { getUniqueAccounts, filterTransactionsByAccount } from '../utils/transactionUtils';
-import type { Transaction } from '../../../types';
-import { formatCurrencyAbs, formatDate } from '../../../utils/formatters';
-import { getAssignmentStatus } from '../../../utils/status';
+import type { Transaction } from '@/types';
+import { formatCurrencyAbs, formatDate } from '@/utils/formatters';
+import { getAssignmentStatus } from '@/utils/status';
+import { Button, Select, Input, Badge } from '@/components/common';
+import { showToast } from '@/lib/toast';
 
 export const TransactionsTable = () => {
   const { data: transactions, isLoading, error } = useTransactions();
@@ -75,8 +77,8 @@ export const TransactionsTable = () => {
             }
           } else {
             // Fallback for older browsers
-            selectRef.current.focus();
-            selectRef.current.click();
+            (selectRef.current as HTMLSelectElement).focus();
+            (selectRef.current as HTMLSelectElement).click();
           }
         }
       }, 0);
@@ -86,8 +88,10 @@ export const TransactionsTable = () => {
   const handleSync = async () => {
     try {
       await syncMutation.mutateAsync({ count: 200 });
+      showToast.success('Transactions synced successfully');
     } catch (error) {
       console.error('Failed to sync transactions:', error);
+      showToast.error('Failed to sync transactions. Please try again.');
     }
   };
 
@@ -141,6 +145,7 @@ export const TransactionsTable = () => {
       setShowDropdownForTransaction(null);
     } catch (error) {
       console.error('Failed to link transaction:', error);
+      showToast.error('Failed to link transaction. Please try again.');
       setLinkMessage({ type: 'error', text: 'Failed to link transaction. Please try again.' });
       setTimeout(() => setLinkMessage(null), 3000);
     }
@@ -149,10 +154,12 @@ export const TransactionsTable = () => {
   const handleDeleteAllocation = async (allocationUuid: string) => {
     try {
       await deleteAllocationMutation.mutateAsync(allocationUuid);
+      showToast.success('Allocation deleted successfully');
       setLinkMessage({ type: 'success', text: 'Allocation deleted successfully' });
       setTimeout(() => setLinkMessage(null), 3000);
     } catch (error) {
       console.error('Failed to delete allocation:', error);
+      showToast.error('Failed to delete allocation. Please try again.');
       setLinkMessage({ type: 'error', text: 'Failed to delete allocation. Please try again.' });
       setTimeout(() => setLinkMessage(null), 3000);
     }
@@ -167,6 +174,7 @@ export const TransactionsTable = () => {
   const handleSaveEdit = async (allocationUuid: string) => {
     const amount = parseFloat(editAmount);
     if (isNaN(amount) || amount === 0) {
+      showToast.error('Please enter a valid amount');
       setLinkMessage({ type: 'error', text: 'Please enter a valid amount' });
       setTimeout(() => setLinkMessage(null), 3000);
       return;
@@ -174,12 +182,14 @@ export const TransactionsTable = () => {
 
     try {
       await updateAllocationMutation.mutateAsync({ allocationUuid, amount });
+      showToast.success('Allocation updated successfully');
       setLinkMessage({ type: 'success', text: 'Allocation updated successfully' });
       setTimeout(() => setLinkMessage(null), 3000);
       setEditingAllocation(null);
       setEditAmount('');
     } catch (error) {
       console.error('Failed to update allocation:', error);
+      showToast.error('Failed to update allocation. Please try again.');
       setLinkMessage({ type: 'error', text: 'Failed to update allocation. Please try again.' });
       setTimeout(() => setLinkMessage(null), 3000);
     }
@@ -235,7 +245,7 @@ export const TransactionsTable = () => {
       <div className="page-header">
         <h1>Transactions</h1>
         <div className="header-actions">
-          <select
+          <Select
             id="account-filter"
             className="account-filter"
             value={selectedAccount}
@@ -247,14 +257,13 @@ export const TransactionsTable = () => {
                 Account {accountId}
               </option>
             ))}
-          </select>
-          <button
-            className="btn-primary"
+          </Select>
+          <Button
             onClick={handleSync}
             disabled={syncMutation.isPending}
           >
             {syncMutation.isPending ? 'Syncing...' : 'Refresh Transactions'}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -323,7 +332,7 @@ export const TransactionsTable = () => {
                                     <span className="allocation-unknown">Unknown</span>
                                   )}
                                   {editingAllocation === allocation.uuid ? (
-                                    <input
+                                    <Input
                                       ref={editInputRef}
                                       type="number"
                                       className="allocation-amount-input"
@@ -349,7 +358,9 @@ export const TransactionsTable = () => {
                                 </div>
                                 <div className="allocation-actions">
                                   {editingAllocation !== allocation.uuid && (
-                                    <button
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
                                       className="allocation-edit-btn"
                                       onClick={() => handleEditAllocation(allocation.uuid, allocation.amount)}
                                       disabled={deleteAllocationMutation.isPending || updateAllocationMutation.isPending}
@@ -359,23 +370,25 @@ export const TransactionsTable = () => {
                                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                       </svg>
-                                    </button>
+                                    </Button>
                                   )}
-                                  <button
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
                                     className="allocation-delete-btn"
                                     onClick={() => handleDeleteAllocation(allocation.uuid)}
                                     disabled={deleteAllocationMutation.isPending || updateAllocationMutation.isPending}
                                     title="Delete allocation"
                                   >
                                     ×
-                                  </button>
+                                  </Button>
                                 </div>
                               </div>
                             ))}
                           </div>
                         )}
                         {showDropdownForTransaction === transaction.uuid ? (
-                          <select
+                          <Select
                             ref={selectRef}
                             className="form-select-compact account-selector"
                             value={getTransactionDropdownValue(transaction)}
@@ -403,15 +416,17 @@ export const TransactionsTable = () => {
                                 ))}
                               </optgroup>
                             )}
-                          </select>
+                          </Select>
                         ) : absoluteRemainder > 0 && (
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="btn-add-allocation"
                             onClick={() => handleShowDropdown(transaction.uuid)}
                             title="Link Transaction"
                           >
                             +
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </td>
@@ -421,11 +436,19 @@ export const TransactionsTable = () => {
                       </span>
                     </td>
                     <td>
-                      <span className={`status-badge status-${status}`}>
+                      <Badge
+                        variant={
+                          status === 'assigned'
+                            ? 'success'
+                            : status === 'partially-assigned'
+                            ? 'warning'
+                            : 'error'
+                        }
+                      >
                         {status === 'assigned' ? 'Linked' :
                          status === 'partially-assigned' ? 'Partially Linked' :
                          'Not Linked'}
-                      </span>
+                      </Badge>
                     </td>
                   </tr>
                 );

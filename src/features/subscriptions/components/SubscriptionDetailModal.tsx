@@ -1,7 +1,8 @@
 import React from 'react';
-import type { Subscription } from '../../../types';
+import type { Subscription } from '@/types';
 import { usePurchaseInvoicesBySubscription } from '../../purchase-invoices';
-import { formatCurrency, formatDate, formatBillingCycle } from '../../../utils/formatters';
+import { formatCurrency, formatDate, formatBillingCycle } from '@/utils/formatters';
+import { Badge, Spinner, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/common';
 
 interface SubscriptionDetailModalProps {
   subscription: Subscription;
@@ -13,14 +14,19 @@ export const SubscriptionDetailModal: React.FC<SubscriptionDetailModalProps> = (
   onClose,
 }) => {
   const { data: invoices, isLoading: loadingInvoices } = usePurchaseInvoicesBySubscription(subscription.uuid);
+  const [isOpen, setIsOpen] = React.useState(true);
+
+  const handleClose = () => {
+    setIsOpen(false);
+    onClose();
+  };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content subscription-detail-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Subscription Details</h2>
-          <button className="modal-close" onClick={onClose}>&times;</button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent onClose={handleClose} className="subscription-detail-modal">
+        <DialogHeader>
+          <DialogTitle>Subscription Details</DialogTitle>
+        </DialogHeader>
         <div className="subscription-detail-content">
           <div className="subscription-detail-left">
             <table className="details-table">
@@ -64,9 +70,9 @@ export const SubscriptionDetailModal: React.FC<SubscriptionDetailModalProps> = (
                 <tr>
                   <td className="detail-label">Status:</td>
                   <td className="detail-value">
-                    <span className={`status-badge status-${subscription.status}`}>
+                    <Badge variant={subscription.status === 'active' ? 'success' : 'error'}>
                       {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
-                    </span>
+                    </Badge>
                   </td>
                 </tr>
                 {subscription.cancelledAt && (
@@ -96,7 +102,7 @@ export const SubscriptionDetailModal: React.FC<SubscriptionDetailModalProps> = (
               <tbody>
                 {loadingInvoices ? (
                   <tr>
-                    <td colSpan={4} className="empty-state">Loading...</td>
+                    <td colSpan={4} className="empty-state"><Spinner size="sm" /></td>
                   </tr>
                 ) : invoices && invoices.length > 0 ? (
                   invoices.map((invoice) => (
@@ -113,9 +119,9 @@ export const SubscriptionDetailModal: React.FC<SubscriptionDetailModalProps> = (
                           : '-'}
                       </td>
                       <td>
-                        <span className={`status-badge status-${invoice.status}`}>
+                        <Badge variant={invoice.status === 'paid' ? 'success' : invoice.status === 'unpaid' ? 'error' : 'default'}>
                           {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
-                        </span>
+                        </Badge>
                       </td>
                     </tr>
                   ))
@@ -128,7 +134,7 @@ export const SubscriptionDetailModal: React.FC<SubscriptionDetailModalProps> = (
             </table>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

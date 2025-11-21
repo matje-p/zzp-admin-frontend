@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import type { PurchaseInvoice, PurchaseInvoiceLine } from "../../../types";
+import type { PurchaseInvoice, PurchaseInvoiceLine } from "@/types";
 import { createNewInvoice, createNewInvoiceLine, transformLineItemsForBackend } from "../utils/invoiceHelpers";
 import { useUpdatePurchaseInvoice } from "./usePurchaseInvoices";
 

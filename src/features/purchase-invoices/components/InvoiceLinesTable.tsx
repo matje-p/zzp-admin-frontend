@@ -1,8 +1,9 @@
 import React from "react";
-import type { PurchaseInvoiceLine, Account } from "../../../types";
+import type { PurchaseInvoiceLine, Account } from "@/types";
 import { InvoiceLineRow } from "./InvoiceLineRow";
-import { formatCurrency } from "../../../utils/formatters";
+import { formatCurrency } from "@/utils/formatters";
 import { calculateLineItemsTotal } from "../utils/invoiceHelpers";
+import { Button } from "@/components/common";
 
 interface InvoiceLinesTableProps {
   lines: PurchaseInvoiceLine[] | undefined;
@@ -53,9 +54,9 @@ export const InvoiceLinesTable: React.FC<InvoiceLinesTableProps> = ({
           )}
           <tr className="add-line-row">
             <td colSpan={5}>
-              <button className="btn-add-line" onClick={onAddLine}>
+              <Button className="btn-add-line" onClick={onAddLine}>
                 Add line
-              </button>
+              </Button>
             </td>
           </tr>
         </tbody>

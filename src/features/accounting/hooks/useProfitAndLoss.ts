@@ -4,8 +4,8 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '../../../lib/api';
-import type { ProfitAndLossData } from '../../../types';
+import { apiClient } from '@/lib/api';
+import type { ProfitAndLossData } from '@/types';
 
 interface ProfitAndLossParams {
   startDate?: string;

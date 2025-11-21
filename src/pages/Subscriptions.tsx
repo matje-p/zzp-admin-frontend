@@ -5,8 +5,9 @@ import {
   SubscriptionsTable,
   DeleteConfirmModal,
   SubscriptionDetailModal,
-} from '../features/subscriptions';
-import type { Subscription } from '../types';
+} from '@/features/subscriptions';
+import type { Subscription } from '@/types';
+import { showToast } from '@/lib/toast';
 import './Subscriptions.css';
 
 const Subscriptions = () => {
@@ -34,10 +35,12 @@ const Subscriptions = () => {
     if (subscriptionToDelete) {
       try {
         await cancelSubscriptionMutation.mutateAsync(subscriptionToDelete);
+        showToast.success('Subscription cancelled successfully');
         setDeleteModalOpen(false);
         setSubscriptionToDelete(null);
       } catch (error) {
         console.error('Failed to delete subscription:', error);
+        showToast.error('Failed to cancel subscription. Please try again.');
       }
     }
   }, [subscriptionToDelete, cancelSubscriptionMutation]);

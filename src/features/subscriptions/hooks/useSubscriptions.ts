@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../../../lib/api';
-import type { Subscription, SubscriptionsResponse } from '../../../types';
+import { apiClient } from '@/lib/api';
+import type { Subscription, SubscriptionsResponse } from '@/types';
 
 // Fetch all subscriptions
 export const useSubscriptions = () => {

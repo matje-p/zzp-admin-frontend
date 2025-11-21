@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../../../lib/api';
+import { apiClient } from '@/lib/api';
 import type {
   PurchaseInvoice,
   PurchaseInvoiceLine,
@@ -7,7 +7,7 @@ import type {
   ExtractInvoiceResponse,
   PurchaseInvoicesResponse,
   StandardResponse,
-} from '../../../types';
+} from '@/types';
 
 // Fetch all purchase invoices
 export const usePurchaseInvoices = () => {

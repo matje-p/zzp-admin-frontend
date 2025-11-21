@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useContacts } from '../features/contacts';
-import type { Contact } from '../types';
-import { formatDate } from '../utils/formatters';
+import { useContacts } from '@/features/contacts';
+import type { Contact } from '@/types';
+import { formatDate } from '@/utils/formatters';
+import { Button, Badge, Spinner } from '@/components/common';
 import './Contacts.css';
 
 const Contacts = () => {
@@ -18,7 +19,10 @@ const Contacts = () => {
         <div className="page-header">
           <h1>Contacts</h1>
         </div>
-        <p>Loading contacts...</p>
+        <div className="flex items-center gap-2">
+          <Spinner size="sm" />
+          <span>Loading contacts...</span>
+        </div>
       </div>
     );
   }
@@ -39,13 +43,19 @@ const Contacts = () => {
       <div className="page-header">
         <h1>Contacts</h1>
         <div className="header-actions">
-          <button
-            className="btn-primary"
+          <Button
             onClick={() => refetch()}
             disabled={isLoading}
           >
-            {isLoading ? 'Loading...' : 'Refresh Contacts'}
-          </button>
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <Spinner size="sm" />
+                <span>Loading...</span>
+              </div>
+            ) : (
+              'Refresh Contacts'
+            )}
+          </Button>
         </div>
       </div>
 
@@ -76,16 +86,16 @@ const Contacts = () => {
                       <td>{contact.email || '-'}</td>
                       <td>{contact.phone || '-'}</td>
                       <td>
-                        <span className={`type-badge type-${contact.type}`}>
+                        <Badge variant="default">
                           {contact.type.charAt(0).toUpperCase() + contact.type.slice(1)}
-                        </span>
+                        </Badge>
                       </td>
                       <td className="vat-number">{contact.vatNumber || '-'}</td>
                       <td className="invoice-count">{contact.purchaseInvoiceCount}</td>
                       <td>
-                        <span className={`status-badge ${contact.isActive ? 'status-active' : 'status-inactive'}`}>
+                        <Badge variant={contact.isActive ? 'success' : 'error'}>
                           {contact.isActive ? 'Active' : 'Inactive'}
-                        </span>
+                        </Badge>
                       </td>
                     </tr>
                     {isExpanded && (

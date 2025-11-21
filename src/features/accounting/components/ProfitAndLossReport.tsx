@@ -3,8 +3,8 @@
  * Renders the complete P&L report with revenue, costs, and result sections
  */
 
-import type { ProfitAndLossData } from '../../../types';
-import { formatCurrency } from '../../../utils/formatters';
+import type { ProfitAndLossData } from '@/types';
+import { formatCurrency } from '@/utils/formatters';
 import { calculateProfitAndLossResult, getResultClass } from '../utils/profitAndLossCalculations';
 
 interface ProfitAndLossReportProps {

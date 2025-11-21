@@ -3,7 +3,7 @@
  * Pure functions for P&L domain-specific calculations
  */
 
-import type { ProfitAndLossData, ProfitAndLossResult } from '../../../types';
+import type { ProfitAndLossData, ProfitAndLossResult } from '@/types';
 
 /**
  * Calculate P&L result metrics from revenue and expenses

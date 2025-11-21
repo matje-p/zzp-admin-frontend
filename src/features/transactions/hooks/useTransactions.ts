@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../../../lib/api';
+import { apiClient } from '@/lib/api';
 import type {
   Transaction,
   TransactionsResponse,
   SyncTransactionsResponse,
   SyncTransactionsParams,
-} from '../../../types';
+} from '@/types';
 
 // Fetch all transactions
 export const useTransactions = (limit = 100, offset = 0) => {

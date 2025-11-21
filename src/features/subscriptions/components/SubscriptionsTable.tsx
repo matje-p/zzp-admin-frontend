@@ -1,7 +1,8 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
-import type { Subscription } from '../../../types';
-import { formatCurrency, formatDate, formatBillingCycle } from '../../../utils/formatters';
+import type { Subscription } from '@/types';
+import { formatCurrency, formatDate, formatBillingCycle } from '@/utils/formatters';
+import { Button, Badge } from '@/components/common';
 
 interface SubscriptionsTableProps {
   subscriptions: Subscription[] | undefined;
@@ -44,18 +45,19 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
                 <td>{formatBillingCycle(subscription.billingCycle)}</td>
                 <td>{formatDate(subscription.startDate)}</td>
                 <td>
-                  <span className={`status-badge status-${subscription.status}`}>
+                  <Badge variant={subscription.status === 'active' ? 'success' : 'error'}>
                     {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
-                  </span>
+                  </Badge>
                 </td>
                 <td>
-                  <button
-                    className="delete-button"
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={(e) => onDeleteClick(e, subscription.uuid)}
                     title="Delete subscription"
                   >
                     <Trash2 size={16} />
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))

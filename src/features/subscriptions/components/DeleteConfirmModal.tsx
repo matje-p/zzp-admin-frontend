@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/common';
 
 interface DeleteConfirmModalProps {
   isOpen: boolean;
@@ -13,26 +14,28 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   onConfirm,
   onCancel,
 }) => {
-  if (!isOpen) return null;
-
   return (
-    <div className="modal-overlay" onClick={onCancel}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h2>Delete Subscription</h2>
-        <p>Are you sure you want to delete this subscription?</p>
-        <div className="modal-actions">
-          <button className="btn-cancel" onClick={onCancel}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
+      <DialogContent onClose={onCancel}>
+        <DialogHeader>
+          <DialogTitle>Delete Subscription</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete this subscription?
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={onCancel}>
             Cancel
-          </button>
-          <button
-            className="btn-delete"
+          </Button>
+          <Button
+            variant="destructive"
             onClick={onConfirm}
             disabled={isDeleting}
           >
             {isDeleting ? 'Deleting...' : 'Delete'}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };

@@ -2,8 +2,8 @@
  * Helper utilities for invoice operations
  */
 
-import type { PurchaseInvoice, PurchaseInvoiceLine } from "../../../types";
-import { getAssignmentStatus, type AssignmentStatus } from "../../../utils/status";
+import type { PurchaseInvoice, PurchaseInvoiceLine } from "@/types";
+import { getAssignmentStatus, type AssignmentStatus } from "@/utils/status";
 
 /**
  * Get payment status for an invoice (linked/partially-linked/unlinked)

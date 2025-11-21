@@ -1,4 +1,5 @@
 import React from "react";
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/common";
 
 interface UnsavedChangesModalProps {
   isOpen: boolean;
@@ -11,25 +12,25 @@ export const UnsavedChangesModal: React.FC<UnsavedChangesModalProps> = ({
   onConfirm,
   onCancel,
 }) => {
-  if (!isOpen) return null;
-
   return (
-    <div className="modal-overlay" onClick={onCancel}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h2>Unsaved Changes</h2>
-        <p>
-          You have unsaved changes. Are you sure you want to close without
-          saving?
-        </p>
-        <div className="modal-actions">
-          <button className="btn-cancel" onClick={onCancel}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
+      <DialogContent onClose={onCancel}>
+        <DialogHeader>
+          <DialogTitle>Unsaved Changes</DialogTitle>
+          <DialogDescription>
+            You have unsaved changes. Are you sure you want to close without
+            saving?
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={onCancel}>
             Cancel
-          </button>
-          <button className="btn-delete" onClick={onConfirm}>
+          </Button>
+          <Button variant="destructive" onClick={onConfirm}>
             Close Without Saving
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };

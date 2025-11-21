@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '../../../lib/api';
-import type { Account } from '../../../types';
+import { apiClient } from '@/lib/api';
+import type { Account } from '@/types';
 
 /**
  * Fetch expense accounts

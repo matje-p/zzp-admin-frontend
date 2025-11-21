@@ -1,21 +1,22 @@
 import { useState } from 'react';
-import { useSalesInvoices, SalesInvoiceForm } from '../features/sales-invoices';
-import type { SalesInvoice } from '../features/sales-invoices/hooks/useSalesInvoices';
-import { formatCurrency, formatDate } from '../utils/formatters';
+import { useSalesInvoices, SalesInvoiceForm } from '@/features/sales-invoices';
+import type { SalesInvoice } from '@/features/sales-invoices/hooks/useSalesInvoices';
+import { formatCurrency, formatDate } from '@/utils/formatters';
+import { Button, Badge } from '@/components/common';
 import './SalesInvoices.css';
 
 const SalesInvoices = () => {
   const { data: invoices, isLoading, error } = useSalesInvoices();
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  const getStatusClass = (status: string) => {
+  const getStatusVariant = (status: string): "default" | "success" | "warning" | "error" | "info" | "secondary" => {
     switch (status) {
-      case 'draft': return 'status-draft';
-      case 'sent': return 'status-sent';
-      case 'paid': return 'status-paid';
-      case 'overdue': return 'status-overdue';
-      case 'cancelled': return 'status-cancelled';
-      default: return '';
+      case 'paid': return 'success';
+      case 'sent': return 'info';
+      case 'overdue': return 'error';
+      case 'cancelled': return 'secondary';
+      case 'draft': return 'warning';
+      default: return 'default';
     }
   };
 
@@ -46,9 +47,9 @@ const SalesInvoices = () => {
       <div className="page-header">
         <h1>Sales Invoices</h1>
         <div className="header-actions">
-          <button className="btn-primary" onClick={() => setIsFormOpen(true)}>
+          <Button onClick={() => setIsFormOpen(true)}>
             Create Invoice
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -74,9 +75,9 @@ const SalesInvoices = () => {
                   <td className="amount">{formatCurrency(invoice.totalAmount)}</td>
                   <td>{invoice.dueDate ? formatDate(invoice.dueDate) : '-'}</td>
                   <td>
-                    <span className={`status-badge ${getStatusClass(invoice.status)}`}>
+                    <Badge variant={getStatusVariant(invoice.status)}>
                       {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
-                    </span>
+                    </Badge>
                   </td>
                 </tr>
               ))

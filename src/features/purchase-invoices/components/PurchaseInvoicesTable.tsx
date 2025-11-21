@@ -1,8 +1,9 @@
 import React from "react";
 import { Trash2 } from "lucide-react";
-import type { PurchaseInvoice } from "../../../types";
-import { formatCurrency, formatDate, formatPeriod, truncateDescription } from "../../../utils/formatters";
+import type { PurchaseInvoice } from "@/types";
+import { formatCurrency, formatDate, formatPeriod, truncateDescription } from "@/utils/formatters";
 import { getPaymentStatus } from "../utils/invoiceHelpers";
+import { Button, Badge } from "@/components/common";
 
 interface PurchaseInvoicesTableProps {
   invoices: PurchaseInvoice[] | undefined;
@@ -77,42 +78,43 @@ export const PurchaseInvoicesTable: React.FC<PurchaseInvoicesTableProps> = ({
                   {formatCurrency(invoice.amount)}
                 </td>
                 <td className="type-cell">
-                  <span className="subscription-badge">
+                  <Badge variant="default">
                     {invoice.subscriptionUuid ? "Subscription" : "One-off"}
-                  </span>
+                  </Badge>
                 </td>
                 <td>
-                  <span
-                    className={`status-badge ${
-                      invoice.filePath ? "status-uploaded" : "status-expected"
-                    }`}
-                  >
+                  <Badge variant={invoice.filePath ? "info" : "secondary"}>
                     {invoice.filePath ? "Uploaded" : "Not uploaded"}
-                  </span>
+                  </Badge>
                 </td>
                 <td>
-                  <span
-                    className={`status-badge status-${getPaymentStatus(
-                      invoice
-                    )}`}
+                  <Badge
+                    variant={
+                      getPaymentStatus(invoice) === "linked"
+                        ? "success"
+                        : getPaymentStatus(invoice) === "partially-linked"
+                        ? "warning"
+                        : "error"
+                    }
                   >
                     {getPaymentStatus(invoice) === "linked"
                       ? "Linked"
                       : getPaymentStatus(invoice) === "partially-linked"
                       ? "Partially Linked"
                       : "Not Linked"}
-                  </span>
+                  </Badge>
                 </td>
                 <td>
-                  <button
-                    className="delete-button"
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={(e) =>
                       onDeleteClick(e, invoice.purchaseInvoiceUploadUuid)
                     }
                     title="Delete invoice"
                   >
                     <Trash2 size={16} />
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))

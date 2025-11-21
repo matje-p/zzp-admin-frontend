@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { formatDate } from "../utils/formatters";
+import { formatDate } from "@/utils/formatters";
+import { Button, Badge } from "@/components/common";
 import "./Todos.css";
 
 interface Todo {
@@ -146,9 +147,9 @@ const Todos = () => {
     <div className="todos-page">
       <div className="page-header">
         <h1>To-do's</h1>
-        <button className="btn-primary" onClick={() => {}}>
+        <Button onClick={() => {}}>
           Add To-do
-        </button>
+        </Button>
       </div>
 
       <div className="collapsible-tile">
@@ -184,15 +185,29 @@ const Todos = () => {
                     <td className="todo-description">{todo.description}</td>
                     <td>{formatDate(todo.dueDate)}</td>
                     <td>
-                      <span
-                        className={`priority-badge priority-${todo.priority}`}
+                      <Badge
+                        variant={
+                          todo.priority === "high"
+                            ? "error"
+                            : todo.priority === "medium"
+                            ? "warning"
+                            : "secondary"
+                        }
                       >
                         {todo.priority.charAt(0).toUpperCase() +
                           todo.priority.slice(1)}
-                      </span>
+                      </Badge>
                     </td>
                     <td>
-                      <span className={`status-badge status-${todo.status}`}>
+                      <Badge
+                        variant={
+                          todo.status === "completed"
+                            ? "success"
+                            : todo.status === "in-progress"
+                            ? "warning"
+                            : "default"
+                        }
+                      >
                         {todo.status
                           .split("-")
                           .map(
@@ -200,12 +215,12 @@ const Todos = () => {
                               word.charAt(0).toUpperCase() + word.slice(1)
                           )
                           .join(" ")}
-                      </span>
+                      </Badge>
                     </td>
                     <td>
-                      <button className="btn-ignore" onClick={() => {}}>
+                      <Button variant="outline" onClick={() => {}}>
                         Ignore
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -253,19 +268,23 @@ const Todos = () => {
                         : "-"}
                     </td>
                     <td>
-                      <span
-                        className={`priority-badge priority-${todo.priority}`}
+                      <Badge
+                        variant={
+                          todo.priority === "high"
+                            ? "error"
+                            : todo.priority === "medium"
+                            ? "warning"
+                            : "secondary"
+                        }
                       >
                         {todo.priority.charAt(0).toUpperCase() +
                           todo.priority.slice(1)}
-                      </span>
+                      </Badge>
                     </td>
                     <td>
-                      <span
-                        className={`done-by-badge done-by-${todo.doneBy?.toLowerCase()}`}
-                      >
+                      <Badge variant={todo.doneBy === "AI" ? "info" : "default"}>
                         {todo.doneBy || "-"}
-                      </span>
+                      </Badge>
                     </td>
                   </tr>
                 ))}

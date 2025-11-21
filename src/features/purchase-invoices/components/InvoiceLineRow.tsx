@@ -1,5 +1,6 @@
 import React from "react";
-import type { PurchaseInvoiceLine, Account } from "../../../types";
+import type { PurchaseInvoiceLine, Account } from "@/types";
+import { Input, Select } from "@/components/common";
 
 interface InvoiceLineRowProps {
   line: PurchaseInvoiceLine;
@@ -19,7 +20,7 @@ export const InvoiceLineRow: React.FC<InvoiceLineRowProps> = ({
   return (
     <tr>
       <td>
-        <input
+        <Input
           type="number"
           className="form-input-compact line-input"
           value={line.quantity ?? ""}
@@ -38,7 +39,7 @@ export const InvoiceLineRow: React.FC<InvoiceLineRowProps> = ({
         />
       </td>
       <td>
-        <input
+        <Input
           type="text"
           className="form-input-compact line-input"
           value={line.description || ""}
@@ -52,7 +53,7 @@ export const InvoiceLineRow: React.FC<InvoiceLineRowProps> = ({
         />
       </td>
       <td>
-        <input
+        <Input
           type="number"
           className="form-input-compact line-input amount-input"
           value={line.amountExclVat ?? ""}
@@ -78,7 +79,7 @@ export const InvoiceLineRow: React.FC<InvoiceLineRowProps> = ({
             gap: "4px",
           }}
         >
-          <input
+          <Input
             type="number"
             className="form-input-compact line-input vat-input"
             value={line.vatPercentage ?? ""}
@@ -100,7 +101,7 @@ export const InvoiceLineRow: React.FC<InvoiceLineRowProps> = ({
         </div>
       </td>
       <td>
-        <select
+        <Select
           className="form-select-compact line-input"
           value={line.category || ""}
           onChange={(e) =>
@@ -116,7 +117,7 @@ export const InvoiceLineRow: React.FC<InvoiceLineRowProps> = ({
               {account.name}
             </option>
           ))}
-        </select>
+        </Select>
       </td>
     </tr>
   );

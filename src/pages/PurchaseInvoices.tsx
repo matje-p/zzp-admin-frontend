@@ -9,11 +9,13 @@ import {
   DeleteConfirmModal,
   UnsavedChangesModal,
   PurchaseInvoicesTable,
-} from "../features/purchase-invoices";
-import { useContacts } from "../features/contacts";
-import { useExpenseAccounts } from "../features/accounts";
-import { useSubscriptions } from "../features/subscriptions";
-import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+} from "@/features/purchase-invoices";
+import { useContacts } from "@/features/contacts";
+import { useExpenseAccounts } from "@/features/accounts";
+import { useSubscriptions } from "@/features/subscriptions";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { Button } from "@/components/common";
+import { showToast } from "@/lib/toast";
 import "./PurchaseInvoices.css";
 
 const PurchaseInvoices = () => {
@@ -59,10 +61,12 @@ const PurchaseInvoices = () => {
     if (invoiceToDelete) {
       try {
         await deleteInvoiceMutation.mutateAsync(invoiceToDelete);
+        showToast.success("Invoice deleted successfully");
         setDeleteModalOpen(false);
         setInvoiceToDelete(null);
       } catch (error) {
         console.error("Failed to delete invoice:", error);
+        showToast.error("Failed to delete invoice. Please try again.");
       }
     }
   }, [invoiceToDelete, deleteInvoiceMutation]);
@@ -118,9 +122,9 @@ const PurchaseInvoices = () => {
     <div className="purchase-invoices-page">
       <div className="page-header">
         <h1>Purchase invoices</h1>
-        <button className="btn-primary" onClick={handleCreateInvoice}>
+        <Button onClick={handleCreateInvoice}>
           Add Purchase Invoice
-        </button>
+        </Button>
       </div>
 
       <FileUploadDropzone

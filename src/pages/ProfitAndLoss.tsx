@@ -13,7 +13,7 @@
  * - Include domain calculations
  */
 
-import { useProfitAndLoss, ProfitAndLossReport } from '../features/accounting';
+import { useProfitAndLoss, ProfitAndLossReport } from '@/features/accounting';
 import './ProfitAndLoss.css';
 
 const ProfitAndLoss = () => {

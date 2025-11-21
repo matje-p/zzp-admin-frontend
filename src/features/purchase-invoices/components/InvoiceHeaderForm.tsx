@@ -1,6 +1,7 @@
 import React from "react";
-import type { PurchaseInvoice, Contact } from "../../../types";
-import type { Subscription } from "../../../types/subscription";
+import type { PurchaseInvoice, Contact } from "@/types";
+import type { Subscription } from "@/types/subscription";
+import { Input, Select, Badge } from "@/components/common";
 
 interface InvoiceHeaderFormProps {
   invoice: PurchaseInvoice;
@@ -21,7 +22,7 @@ export const InvoiceHeaderForm: React.FC<InvoiceHeaderFormProps> = ({
     <div className="invoice-detail-top">
       <div className="detail-field">
         <span className="field-label">Contact</span>
-        <select
+        <Select
           className="form-select field-input"
           value={invoice.contactUuid || ""}
           onChange={(e) => {
@@ -42,13 +43,13 @@ export const InvoiceHeaderForm: React.FC<InvoiceHeaderFormProps> = ({
               {contact.name}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {isSubscriptionInvoice ? (
         <div className="detail-field">
           <span className="field-label">Subscription</span>
-          <select
+          <Select
             className="form-select field-input"
             value={invoice.subscriptionUuid || ""}
             onChange={(e) => {
@@ -70,12 +71,12 @@ export const InvoiceHeaderForm: React.FC<InvoiceHeaderFormProps> = ({
                 {subscription.name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
       ) : (
         <div className="detail-field">
           <span className="field-label">Description</span>
-          <input
+          <Input
             type="text"
             className="form-input field-input"
             value={invoice.description || ""}
@@ -90,7 +91,7 @@ export const InvoiceHeaderForm: React.FC<InvoiceHeaderFormProps> = ({
 
       <div className="detail-field">
         <span className="field-label">Invoice Date</span>
-        <input
+        <Input
           type="date"
           className="form-input field-input"
           value={
@@ -111,7 +112,7 @@ export const InvoiceHeaderForm: React.FC<InvoiceHeaderFormProps> = ({
         <>
           <div className="detail-field">
             <span className="field-label">Period Start</span>
-            <input
+            <Input
               type="date"
               className="form-input field-input"
               value={
@@ -133,7 +134,7 @@ export const InvoiceHeaderForm: React.FC<InvoiceHeaderFormProps> = ({
           </div>
           <div className="detail-field">
             <span className="field-label">Period End</span>
-            <input
+            <Input
               type="date"
               className="form-input field-input"
               value={
@@ -157,9 +158,9 @@ export const InvoiceHeaderForm: React.FC<InvoiceHeaderFormProps> = ({
       <div className="detail-field">
         <span className="field-label">Type</span>
         <span className="field-value">
-          <span className="subscription-badge">
+          <Badge variant="default">
             {invoice.subscriptionUuid ? "Subscription" : "One-off"}
-          </span>
+          </Badge>
         </span>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { TransactionsTable } from '../features/transactions';
+import { TransactionsTable } from '@/features/transactions';
 import './Transactions.css';
 
 /**

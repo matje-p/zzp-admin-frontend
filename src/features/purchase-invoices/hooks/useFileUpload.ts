@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { validateFileType } from "../utils/invoiceHelpers";
-import { FILE_TYPE_ERROR_MESSAGE } from "../../../constants/invoiceConstants";
+import { FILE_TYPE_ERROR_MESSAGE } from "@/constants/invoiceConstants";
 
 interface ProcessingStatus {
   processingId: string;

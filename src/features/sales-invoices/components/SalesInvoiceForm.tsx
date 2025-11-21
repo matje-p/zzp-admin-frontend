@@ -1,5 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useCreateSalesInvoice, type CreateSalesInvoiceDto } from '../hooks/useSalesInvoices';
+import { Button, Input, Select, Textarea, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, FormField } from '@/components/common';
+import { salesInvoiceSchema, type SalesInvoiceFormData } from '@/lib/validation';
+import { showToast } from '@/lib/toast';
 import './SalesInvoiceForm.css';
 
 interface SalesInvoiceFormProps {
@@ -10,399 +15,322 @@ interface SalesInvoiceFormProps {
 const SalesInvoiceForm: React.FC<SalesInvoiceFormProps> = ({ isOpen, onClose }) => {
   const createMutation = useCreateSalesInvoice();
 
-  const [formData, setFormData] = useState<CreateSalesInvoiceDto>({
-    invoiceNumber: '',
-    invoiceDate: new Date().toISOString().split('T')[0],
-    dueDate: '',
-    clientName: '',
-    clientEmail: '',
-    clientAddress: '',
-    clientVatNumber: '',
-    description: '',
-    subtotal: 0,
-    vatPercentage: 21,
-    vatAmount: 0,
-    totalAmount: 0,
-    currency: 'EUR',
-    status: 'draft',
-    notes: '',
-    termsAndConditions: ''
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    reset,
+    formState: { errors, isSubmitting }
+  } = useForm<SalesInvoiceFormData>({
+    resolver: zodResolver(salesInvoiceSchema),
+    defaultValues: {
+      invoiceNumber: '',
+      invoiceDate: new Date().toISOString().split('T')[0],
+      dueDate: '',
+      clientName: '',
+      clientEmail: '',
+      clientAddress: '',
+      clientVatNumber: '',
+      description: '',
+      subtotal: 0,
+      vatPercentage: 21,
+      vatAmount: 0,
+      totalAmount: 0,
+      currency: 'EUR',
+      status: 'draft',
+      notes: '',
+      termsAndConditions: ''
+    }
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  // Watch subtotal and VAT percentage for auto-calculation
+  const subtotal = watch('subtotal');
+  const vatPercentage = watch('vatPercentage');
 
-  // Handle Escape key to close modal
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        e.preventDefault();
-        onClose();
-      }
-    };
+  // Auto-calculate VAT and total when subtotal or VAT percentage changes
+  React.useEffect(() => {
+    const subtotalNum = parseFloat(subtotal?.toString() || '0') || 0;
+    const vatPercentageNum = parseFloat(vatPercentage?.toString() || '0') || 0;
+    const vatAmount = subtotalNum * (vatPercentageNum / 100);
+    const totalAmount = subtotalNum + vatAmount;
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+    setValue('vatAmount', parseFloat(vatAmount.toFixed(2)));
+    setValue('totalAmount', parseFloat(totalAmount.toFixed(2)));
+  }, [subtotal, vatPercentage, setValue]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => {
-      const updated = { ...prev, [name]: value };
-
-      // Auto-calculate VAT and total when subtotal or VAT percentage changes
-      if (name === 'subtotal' || name === 'vatPercentage') {
-        const subtotal = parseFloat(name === 'subtotal' ? value : updated.subtotal.toString()) || 0;
-        const vatPercentage = parseFloat(name === 'vatPercentage' ? value : updated.vatPercentage?.toString() || '0') || 0;
-        const vatAmount = subtotal * (vatPercentage / 100);
-        const totalAmount = subtotal + vatAmount;
-
-        return {
-          ...updated,
-          subtotal,
-          vatPercentage,
-          vatAmount,
-          totalAmount
-        };
-      }
-
-      return updated;
-    });
-
-    // Clear error for this field
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-  };
-
-  const validate = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.invoiceNumber.trim()) {
-      newErrors.invoiceNumber = 'Invoice number is required';
-    }
-    if (!formData.clientName.trim()) {
-      newErrors.clientName = 'Client name is required';
-    }
-    if (!formData.invoiceDate) {
-      newErrors.invoiceDate = 'Invoice date is required';
-    }
-    if (formData.subtotal <= 0) {
-      newErrors.subtotal = 'Subtotal must be greater than 0';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validate()) {
-      return;
-    }
-
+  const onSubmit = async (data: SalesInvoiceFormData) => {
     try {
-      await createMutation.mutateAsync(formData);
-
-      // Reset form and close modal
-      setFormData({
-        invoiceNumber: '',
-        invoiceDate: new Date().toISOString().split('T')[0],
-        dueDate: '',
-        clientName: '',
-        clientEmail: '',
-        clientAddress: '',
-        clientVatNumber: '',
-        description: '',
-        subtotal: 0,
-        vatPercentage: 21,
-        vatAmount: 0,
-        totalAmount: 0,
-        currency: 'EUR',
-        status: 'draft',
-        notes: '',
-        termsAndConditions: ''
-      });
-      setErrors({});
+      await createMutation.mutateAsync(data as CreateSalesInvoiceDto);
+      showToast.success('Sales invoice created successfully');
+      reset();
       onClose();
     } catch (error) {
       console.error('Failed to create sales invoice:', error);
-      setErrors({ submit: 'Failed to create invoice. Please try again.' });
+      showToast.error('Failed to create sales invoice. Please try again.');
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Create Sales Invoice</h2>
-          <button className="modal-close" onClick={onClose}>&times;</button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent onClose={onClose}>
+        <DialogHeader>
+          <DialogTitle>Create Sales Invoice</DialogTitle>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="sales-invoice-form">
+        <form onSubmit={handleSubmit(onSubmit)} className="sales-invoice-form">
           <div className="form-section">
             <h3>Invoice Details</h3>
             <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="invoiceNumber">Invoice Number *</label>
-                <input
-                  type="text"
-                  id="invoiceNumber"
-                  name="invoiceNumber"
-                  value={formData.invoiceNumber}
-                  onChange={handleChange}
-                  className={errors.invoiceNumber ? 'error' : ''}
+              <FormField
+                name="invoiceNumber"
+                label="Invoice Number"
+                required
+                error={errors.invoiceNumber?.message}
+              >
+                <Input
+                  {...register('invoiceNumber')}
                   placeholder="INV-2025-001"
                 />
-                {errors.invoiceNumber && <span className="error-message">{errors.invoiceNumber}</span>}
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label htmlFor="invoiceDate">Invoice Date *</label>
-                <input
+              <FormField
+                name="invoiceDate"
+                label="Invoice Date"
+                required
+                error={errors.invoiceDate?.message}
+              >
+                <Input
                   type="date"
-                  id="invoiceDate"
-                  name="invoiceDate"
-                  value={formData.invoiceDate}
-                  onChange={handleChange}
-                  className={errors.invoiceDate ? 'error' : ''}
+                  {...register('invoiceDate')}
                 />
-                {errors.invoiceDate && <span className="error-message">{errors.invoiceDate}</span>}
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label htmlFor="dueDate">Due Date</label>
-                <input
+              <FormField
+                name="dueDate"
+                label="Due Date"
+                error={errors.dueDate?.message}
+              >
+                <Input
                   type="date"
-                  id="dueDate"
-                  name="dueDate"
-                  value={formData.dueDate}
-                  onChange={handleChange}
+                  {...register('dueDate')}
                 />
-              </div>
+              </FormField>
             </div>
           </div>
 
           <div className="form-section">
             <h3>Client Information</h3>
             <div className="form-row">
-              <div className="form-group full-width">
-                <label htmlFor="clientName">Client Name *</label>
-                <input
-                  type="text"
-                  id="clientName"
-                  name="clientName"
-                  value={formData.clientName}
-                  onChange={handleChange}
-                  className={errors.clientName ? 'error' : ''}
+              <FormField
+                name="clientName"
+                label="Client Name"
+                required
+                error={errors.clientName?.message}
+                className="full-width"
+              >
+                <Input
+                  {...register('clientName')}
                   placeholder="Company Name or Person"
                 />
-                {errors.clientName && <span className="error-message">{errors.clientName}</span>}
-              </div>
+              </FormField>
             </div>
 
             <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="clientEmail">Client Email</label>
-                <input
+              <FormField
+                name="clientEmail"
+                label="Client Email"
+                error={errors.clientEmail?.message}
+              >
+                <Input
                   type="email"
-                  id="clientEmail"
-                  name="clientEmail"
-                  value={formData.clientEmail}
-                  onChange={handleChange}
+                  {...register('clientEmail')}
                   placeholder="client@example.com"
                 />
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label htmlFor="clientVatNumber">Client VAT Number</label>
-                <input
-                  type="text"
-                  id="clientVatNumber"
-                  name="clientVatNumber"
-                  value={formData.clientVatNumber}
-                  onChange={handleChange}
+              <FormField
+                name="clientVatNumber"
+                label="Client VAT Number"
+                error={errors.clientVatNumber?.message}
+              >
+                <Input
+                  {...register('clientVatNumber')}
                   placeholder="NL123456789B01"
                 />
-              </div>
+              </FormField>
             </div>
 
             <div className="form-row">
-              <div className="form-group full-width">
-                <label htmlFor="clientAddress">Client Address</label>
-                <input
-                  type="text"
-                  id="clientAddress"
-                  name="clientAddress"
-                  value={formData.clientAddress}
-                  onChange={handleChange}
+              <FormField
+                name="clientAddress"
+                label="Client Address"
+                error={errors.clientAddress?.message}
+                className="full-width"
+              >
+                <Input
+                  {...register('clientAddress')}
                   placeholder="Street Address, City, Country"
                 />
-              </div>
+              </FormField>
             </div>
           </div>
 
           <div className="form-section">
             <h3>Invoice Items</h3>
             <div className="form-row">
-              <div className="form-group full-width">
-                <label htmlFor="description">Description</label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
+              <FormField
+                name="description"
+                label="Description"
+                error={errors.description?.message}
+                className="full-width"
+              >
+                <Textarea
+                  {...register('description')}
                   rows={3}
                   placeholder="Describe the services or products"
                 />
-              </div>
+              </FormField>
             </div>
 
             <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="subtotal">Subtotal (excl. VAT) *</label>
-                <input
+              <FormField
+                name="subtotal"
+                label="Subtotal (excl. VAT)"
+                required
+                error={errors.subtotal?.message}
+              >
+                <Input
                   type="number"
-                  id="subtotal"
-                  name="subtotal"
-                  value={formData.subtotal}
-                  onChange={handleChange}
-                  className={errors.subtotal ? 'error' : ''}
+                  {...register('subtotal', { valueAsNumber: true })}
                   step="0.01"
                   min="0"
                   placeholder="0.00"
                 />
-                {errors.subtotal && <span className="error-message">{errors.subtotal}</span>}
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label htmlFor="vatPercentage">VAT %</label>
-                <input
+              <FormField
+                name="vatPercentage"
+                label="VAT %"
+                error={errors.vatPercentage?.message}
+              >
+                <Input
                   type="number"
-                  id="vatPercentage"
-                  name="vatPercentage"
-                  value={formData.vatPercentage}
-                  onChange={handleChange}
+                  {...register('vatPercentage', { valueAsNumber: true })}
                   step="0.01"
                   min="0"
                   max="100"
                 />
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label htmlFor="vatAmount">VAT Amount</label>
-                <input
+              <FormField
+                name="vatAmount"
+                label="VAT Amount"
+                error={errors.vatAmount?.message}
+              >
+                <Input
                   type="number"
-                  id="vatAmount"
-                  name="vatAmount"
-                  value={formData.vatAmount}
+                  {...register('vatAmount', { valueAsNumber: true })}
                   readOnly
                   className="readonly-field"
                   step="0.01"
                 />
-              </div>
+              </FormField>
 
-              <div className="form-group">
-                <label htmlFor="totalAmount">Total Amount</label>
-                <input
+              <FormField
+                name="totalAmount"
+                label="Total Amount"
+                error={errors.totalAmount?.message}
+              >
+                <Input
                   type="number"
-                  id="totalAmount"
-                  name="totalAmount"
-                  value={formData.totalAmount}
+                  {...register('totalAmount', { valueAsNumber: true })}
                   readOnly
                   className="readonly-field total-amount"
                   step="0.01"
                 />
-              </div>
+              </FormField>
             </div>
 
             <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="currency">Currency</label>
-                <select
-                  id="currency"
-                  name="currency"
-                  value={formData.currency}
-                  onChange={handleChange}
-                >
+              <FormField
+                name="currency"
+                label="Currency"
+                error={errors.currency?.message}
+              >
+                <Select {...register('currency')}>
                   <option value="EUR">EUR</option>
                   <option value="USD">USD</option>
                   <option value="GBP">GBP</option>
-                </select>
-              </div>
+                </Select>
+              </FormField>
 
-              <div className="form-group">
-                <label htmlFor="status">Status</label>
-                <select
-                  id="status"
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                >
+              <FormField
+                name="status"
+                label="Status"
+                error={errors.status?.message}
+              >
+                <Select {...register('status')}>
                   <option value="draft">Draft</option>
                   <option value="sent">Sent</option>
                   <option value="paid">Paid</option>
                   <option value="overdue">Overdue</option>
                   <option value="cancelled">Cancelled</option>
-                </select>
-              </div>
+                </Select>
+              </FormField>
             </div>
           </div>
 
           <div className="form-section">
             <h3>Additional Information</h3>
             <div className="form-row">
-              <div className="form-group full-width">
-                <label htmlFor="notes">Notes</label>
-                <textarea
-                  id="notes"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleChange}
+              <FormField
+                name="notes"
+                label="Notes"
+                error={errors.notes?.message}
+                className="full-width"
+              >
+                <Textarea
+                  {...register('notes')}
                   rows={2}
                   placeholder="Internal notes (not shown to client)"
                 />
-              </div>
+              </FormField>
             </div>
 
             <div className="form-row">
-              <div className="form-group full-width">
-                <label htmlFor="termsAndConditions">Terms and Conditions</label>
-                <textarea
-                  id="termsAndConditions"
-                  name="termsAndConditions"
-                  value={formData.termsAndConditions}
-                  onChange={handleChange}
+              <FormField
+                name="termsAndConditions"
+                label="Terms and Conditions"
+                error={errors.termsAndConditions?.message}
+                className="full-width"
+              >
+                <Textarea
+                  {...register('termsAndConditions')}
                   rows={3}
                   placeholder="Payment terms, conditions, etc."
                 />
-              </div>
+              </FormField>
             </div>
           </div>
 
-          {errors.submit && (
+          {createMutation.isError && (
             <div className="form-error">
-              {errors.submit}
+              Failed to create invoice. Please try again.
             </div>
           )}
 
-          <div className="modal-footer">
-            <button type="button" className="btn-secondary" onClick={onClose}>
+          <DialogFooter>
+            <Button type="button" variant="secondary" onClick={onClose}>
               Cancel
-            </button>
-            <button type="submit" className="btn-primary" disabled={createMutation.isPending}>
+            </Button>
+            <Button type="submit" disabled={isSubmitting || createMutation.isPending}>
               {createMutation.isPending ? 'Creating...' : 'Create Invoice'}
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
