@@ -3,10 +3,18 @@
  */
 
 export const formatCurrency = (amount: number, currency: string = "EUR"): string => {
-  return new Intl.NumberFormat("nl-NL", {
+  const formatted = new Intl.NumberFormat("nl-NL", {
     style: "currency",
     currency,
-  }).format(amount);
+  }).format(Math.abs(amount));
+
+  // Add + or - prefix based on amount (never use red/green colors)
+  if (amount > 0) {
+    return `+${formatted}`;
+  } else if (amount < 0) {
+    return `-${formatted}`;
+  }
+  return formatted;
 };
 
 export const formatCurrencyAbs = (amount: number, currency: string = "EUR"): string => {

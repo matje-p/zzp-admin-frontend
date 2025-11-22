@@ -140,13 +140,11 @@
 }
 
 .invoice-number {
-  font-family: 'Courier New', monospace;
   font-weight: 600;
   color: #4b5563;
 }
 
 .amount-positive {
-  color: #059669;
   font-weight: 600;
 }
 

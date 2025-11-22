@@ -232,13 +232,11 @@
 }
 
 .invoice-number {
-  font-family: 'Courier New', monospace;
   font-weight: 600;
   color: #4b5563;
 }
 
 .amount-positive {
-  color: #059669;
   font-weight: 600;
 }
 
@@ -504,7 +502,6 @@
 
 .invoice-lines-table .amount-cell {
   text-align: right;
-  font-family: 'Courier New', monospace;
 }
 
 .invoice-lines-table .no-lines-message {
@@ -545,7 +542,6 @@
 
 .invoice-lines-table .amount-input {
   text-align: right;
-  font-family: 'Courier New', monospace;
 }
 
 .invoice-lines-table .actions-row {

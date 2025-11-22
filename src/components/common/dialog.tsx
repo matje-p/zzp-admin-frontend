@@ -1,4 +1,5 @@
 import * as React from "react"
+import { createPortal } from "react-dom"
 import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "./button"
@@ -17,34 +18,85 @@ const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
       }
     }
 
-    document.addEventListener("keydown", handleEscape)
+    if (open) {
+      document.addEventListener("keydown", handleEscape)
+    }
     return () => document.removeEventListener("keydown", handleEscape)
   }, [open, onOpenChange])
 
+  React.useEffect(() => {
+    if (open) {
+      console.log('Dialog is open, rendering portal')
+    }
+  }, [open])
+
   if (!open) return null
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+  const content = (
+    <div
+      className="fixed inset-0 flex items-center justify-center"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
       <div
-        className="fixed inset-0 bg-black/50"
+        className="fixed inset-0"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 9999
+        }}
         onClick={() => onOpenChange(false)}
       />
-      <div className="relative z-50">{children}</div>
+      <div
+        className="relative"
+        style={{
+          position: 'relative',
+          zIndex: 10000
+        }}
+      >
+        {children}
+      </div>
     </div>
   )
+
+  console.log('Rendering portal to body', document.body)
+  return createPortal(content, document.body)
 }
 Dialog.displayName = "Dialog"
 
 const DialogContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & { onClose?: () => void }
->(({ className, children, onClose, ...props }, ref) => (
+>(({ className, children, onClose, style, ...props }, ref) => (
   <div
     ref={ref}
     className={cn(
-      "relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg border border-gray-200 bg-white p-6 shadow-lg",
+      "relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow-lg",
       className
     )}
+    style={{
+      backgroundColor: 'white',
+      borderRadius: '0.5rem',
+      padding: '1.5rem',
+      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+      maxHeight: '90vh',
+      overflowY: 'auto',
+      border: 'none',
+      ...style
+    }}
     onClick={(e) => e.stopPropagation()}
     {...props}
   >
@@ -53,9 +105,19 @@ const DialogContent = React.forwardRef<
         variant="ghost"
         size="icon"
         className="absolute right-4 top-4"
+        style={{
+          position: 'absolute',
+          right: '1rem',
+          top: '1rem',
+          backgroundColor: 'transparent',
+          border: 'none',
+          color: '#6b7280',
+          padding: '0.5rem',
+          cursor: 'pointer'
+        }}
         onClick={onClose}
       >
-        <X className="h-4 w-4" />
+        <X className="h-4 w-4" style={{ width: '1rem', height: '1rem' }} />
       </Button>
     )}
     {children}

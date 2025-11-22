@@ -44,15 +44,15 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
 
   return (
     <Dialog open={!!invoice} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent onClose={onClose} className="invoice-detail-modal">
+      <DialogContent onClose={onClose} className="max-w-[1200px] w-[95vw]">
         <DialogHeader>
           <DialogTitle>
             {isCreating ? "Create Purchase Invoice" : "Invoice Details"}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="invoice-detail-content">
-          <div className="invoice-detail-left">
+        <div className="grid grid-cols-2 gap-6 mt-4">
+          <div className="flex flex-col gap-6 overflow-y-auto">
             <InvoiceHeaderForm
               invoice={invoice}
               contacts={contacts}
@@ -68,7 +68,7 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
             />
           </div>
 
-          <div className="invoice-detail-right">
+          <div className="flex flex-col gap-3">
             <DocumentViewer
               invoiceUuid={invoice.purchaseInvoiceUploadUuid}
               filePath={invoice.filePath}

@@ -80,7 +80,6 @@
 }
 
 .account-id {
-  font-family: 'Courier New', monospace;
   font-size: 13px;
   color: #6b7280;
   font-weight: 500;
@@ -196,12 +195,10 @@
 }
 
 .amount-positive {
-  color: #059669;
   font-weight: 600;
 }
 
 .amount-negative {
-  color: #dc2626;
   font-weight: 600;
 }
 
@@ -323,9 +320,7 @@
 }
 
 .allocation-amount {
-  color: #059669;
   font-weight: 600;
-  font-family: 'Courier New', monospace;
   white-space: nowrap;
 }
 
@@ -416,7 +411,6 @@
   border: 1px solid #d1d5db;
   border-radius: 3px;
   font-size: 12px;
-  font-family: 'Courier New', monospace;
   color: #1f2937;
   background-color: white;
 }
@@ -435,19 +429,18 @@
 /* Remainder amount styles */
 .remainder-amount {
   font-weight: 600;
-  font-family: 'Courier New', monospace;
 }
 
 .remainder-zero {
-  color: #6b7280;
+  font-weight: 600;
 }
 
 .remainder-unallocated {
-  color: #dc2626;
+  font-weight: 600;
 }
 
 .remainder-overallocated {
-  color: #059669;
+  font-weight: 600;
 }
 
 /* Add allocation button */
